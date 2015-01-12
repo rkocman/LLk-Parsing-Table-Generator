@@ -1,0 +1,86 @@
+html {
+  font-family: Arial,Helvetica Neue,Helvetica,sans-serif;
+  padding: 20px;
+}
+
+.code {
+  font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+  font-size: 97%;
+}
+.info {
+  color: #999999;
+}
+
+#head {
+  float: left;
+}
+#head h1 {
+  font-size: 150%;
+  margin: 0;
+}
+#head h2 {
+  font-size: 100%;
+  margin: 0;
+}
+#head h3 {
+  font-size: 70%;
+  margin: 0;
+}
+#head p {
+  font-size: 70%;
+  color: #333333;
+}
+
+#input {
+  clear: both;
+  padding-top: 10px;
+}
+#input .left,
+#input .right {
+  float: left;
+  margin-right: 30px;
+}
+#input h2 {
+  font-size: 100%;
+  margin: 10px 0 5px 0;
+}
+#input textarea {
+  font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+  font-size: 100%;
+  width: 600px;
+  height: 300px;
+  padding: 5px;
+}
+#input input[type="number"] {
+  width: 50px;
+}
+#input .config {
+  padding-top: 5px;
+  line-height: 2.1;
+  font-size: 80%
+}
+#input input[type="submit"] {
+  margin-top: 5px;
+  width: 170px;
+  height: 50px;
+}
+
+#status {
+  clear: both;
+  padding-top: 10px;
+}
+#status h2 {
+  font-size: 100%;
+}
+#status span {
+  font-style: italic;
+}
+
+#result {
+  clear: both;
+  padding-top: 10px;
+}
+#result h2 {
+  font-size: 100%;
+  margin: 10px 0 5px 0;
+}
