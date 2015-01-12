@@ -1,9 +1,15 @@
 LL(k) Parsing Table Generator
 ========
-LL(k) Parsing Table Generator for Automaton with One-Symbol Reading Head.
+LL(k) Parsing Table Generator for Automaton with One-Symbol Reading Head
 
 **Project status:** under construction  
 **Environment:** HTML + JS
 
+
+## Based on
+Koláø, D.: Simulation of LLk Parsers with Wide Context by Automaton with One-Symbol Reading Head.  
+Aho, A.V., Ullman, J.D.: The Theory of Parsing, Translation, and Compiling, Volume I: Parsing.
+
+
 ## License
-All the source code is licensed under the GNU General Public License (GPL), version 2. A copy of the GPL can be found in the LICENSE file.
+GNU General Public License (GPL), version 2
