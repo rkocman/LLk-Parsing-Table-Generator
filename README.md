@@ -7,7 +7,7 @@ LL(k) Parsing Table Generator for Automaton with One-Symbol Reading Head
 
 
 ## Based on
-Koláø, D.: Simulation of LLk Parsers with Wide Context by Automaton with One-Symbol Reading Head.  
+KolÃ¡Å™, D.: Simulation of LLk Parsers with Wide Context by Automaton with One-Symbol Reading Head.  
 Aho, A.V., Ullman, J.D.: The Theory of Parsing, Translation, and Compiling, Volume I: Parsing.
 
 
