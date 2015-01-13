@@ -9,14 +9,14 @@
 %%
 
 \s+                         /* skip whitespace */
-"//".*                      /* skip single-line comments*/
-"/*".*"*/"                  /* skip multi-line comments */
+"//".*                      /* skip single-line comment */
+"/*".*"*/"                  /* skip multi-line comment */
 "%token"                    return 'TOKENDEF'
 "%%"                        return 'BEGIN'
 ":"                         return ':'
 "|"                         return '|'
 ";"                         return ';'
-[a-zA-Z]\S*                return 'ATOKEN'
+[a-zA-Z]\S*                 return 'ATOKEN'
 "'"[\S]+"'"|"\""[\S]+"\""   return 'VTOKEN'
 <<EOF>>                     return 'EOF'
 
