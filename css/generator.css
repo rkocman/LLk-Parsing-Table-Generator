@@ -1,14 +1,23 @@
 html {
-  font-family: Arial,Helvetica Neue,Helvetica,sans-serif;
+  font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
   padding: 20px;
 }
 
 .code {
-  font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+  font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
   font-size: 97%;
+}
+.code span {
+  display: block;
 }
 .info {
   color: #999999;
+}
+.ok {
+  color: #2ecc40;
+}
+.error {
+  color: #ff4136;
 }
 
 #head {
@@ -45,7 +54,7 @@ html {
   margin: 10px 0 5px 0;
 }
 #input textarea {
-  font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+  font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
   font-size: 100%;
   width: 600px;
   height: 300px;
@@ -76,11 +85,11 @@ html {
   font-style: italic;
 }
 
-#result {
+#output {
   clear: both;
   padding-top: 10px;
 }
-#result h2 {
+#output h2 {
   font-size: 100%;
   margin: 10px 0 5px 0;
 }
