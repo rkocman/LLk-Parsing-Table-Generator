@@ -561,9 +561,9 @@ var YYSTATE=YY_START;
 switch($avoiding_name_collisions) {
 case 0:/* skip whitespace */
 break;
-case 1:/* skip single-line comments*/
+case 1:/* skip single-line comment */
 break;
-case 2:/* skip multi-line comments */
+case 2:/* skip multi-line comment */
 break;
 case 3:return 10
 break;
@@ -583,7 +583,7 @@ case 10:return 6
 break;
 }
 },
-rules: [/^(?:\s+)/,/^(?:\/\/.*)/,/^(?:\/\*.*\*\/)/,/^(?:%token\b)/,/^(?:%%)/,/^(?::)/,/^(?:\|)/,/^(?:;)/,/^(?:[a-zA-Z]\S*)/,/^(?:'[\S]+'|"[\S]+")/,/^(?:$)/],
+rules: [/^(?:\s+)/,/^(?:\/\/.*)/,/^(?:\/\*(.|\n|\r)*?\*\/)/,/^(?:%token\b)/,/^(?:%%)/,/^(?::)/,/^(?:\|)/,/^(?:;)/,/^(?:[a-zA-Z][a-zA-Z0-9]*)/,/^(?:'.+?'|".+?")/,/^(?:$)/],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10],"inclusive":true}}
 });
 return lexer;

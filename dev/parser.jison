@@ -10,14 +10,14 @@
 
 \s+                         /* skip whitespace */
 "//".*                      /* skip single-line comment */
-"/*".*"*/"                  /* skip multi-line comment */
+"/*"(.|\n|\r)*?"*/"         /* skip multi-line comment */
 "%token"                    return 'TOKENDEF'
 "%%"                        return 'BEGIN'
 ":"                         return ':'
 "|"                         return '|'
 ";"                         return ';'
-[a-zA-Z]\S*                 return 'ATOKEN'
-"'"[\S]+"'"|"\""[\S]+"\""   return 'VTOKEN'
+[a-zA-Z][a-zA-Z0-9]*        return 'ATOKEN'
+"'".+?"'"|"\"".+?"\""       return 'VTOKEN'
 <<EOF>>                     return 'EOF'
 
 /lex
