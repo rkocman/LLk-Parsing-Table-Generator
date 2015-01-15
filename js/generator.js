@@ -43,6 +43,9 @@ Grammar.prototype.addT = function(gelement) {
 Grammar.prototype.addR = function(grule) {
   this.R.push(grule);
 };
+Grammar.prototype.startN = function() {
+  return this.R[0].left;
+};
 
 
 ////
@@ -77,6 +80,8 @@ var PTG = {
       out.title("Parsed Rules");
       out.grammar(ParserHandler.IG);
     }
+    
+    TableGenerator.construct(ParserHandler.IG);
     
     this.setOk("OK");
   },
@@ -255,6 +260,7 @@ var ParserHandler = {
   },
   
   finish : function() {
+    
     // Test duplicate rules
     var rulei, rulej, same;
     for (var i = 0; i < this.IG.R.length; i++) {
@@ -276,6 +282,10 @@ var ParserHandler = {
       }
       
     }
+    
+    // TODO : test nonterminals without rules
+    // TODO : test left recursion
+    
   }
   
 };
@@ -329,3 +339,159 @@ var out = {
 $(function() {
   out.out = $("#output");
 });
+
+
+////
+// LL(k) PARSING TABLE GENERATOR
+//////
+
+var LLkRow = function(u, prod, set) {
+  this.u = u;
+  this.prod = prod;
+  this.sets = set;
+};
+
+var LLkT = function(count, N, k) {
+  this.name1 = "T"+count;
+  this.name1html = "T<sub>"+count+"</sub>";
+  
+  var flatk;
+  for (var i = 0; i < k.length; k++) {
+    flatk += k[i].value+"|";
+  }
+  this.name2 = "T"+N.value+"{"+flatk+"}";
+  this.name2html = "T<sub>"+N.value+"{"+flatk+"}</sub>";
+  
+  this.rows = [];
+};
+LLkT.prototype.addRow = function(row) {
+  this.rows.push(row);
+};
+
+var FirstKEl = function(k) {
+  this.leftk = k;
+  this.k = 0;
+  this.str = [];
+};
+FirstKEl.prototype.addGEl = function(gelement) {
+  this.leftk--;
+  this.k++;
+  this.str.push(gelement);
+};
+FirstKEl.prototype.clone = function() {
+  return jQuery.extend(true, {}, this);
+};
+
+var TableGenerator = {
+  
+  IG: undefined,
+  LLks: [],
+  Tcounter: 0,
+  
+  construct: function(IG) {
+    this.IG = IG;
+    this.Tcounter = 0;
+    this.LLks = [];
+    
+    this.constructLLkTs();
+    
+    //(...)
+  },
+  
+  constructLLkTs: function() {
+    //(1)
+    var t0 = this.constructLLkT(this.IG.startN, []);
+    this.LLks.push(t0);
+    
+    //(...)
+  },
+  
+  constructLLkT: function(N, L) {
+    var table = new LLkT(this.Tcounter, N, L);
+    this.Tcounter++;
+    
+    var test = this.firstOp(this.IG.R[0].right);
+    console.log(test);
+    //(...)
+  },
+  
+  firstOp: function(right) {
+    var set = [new FirstKEl(PTG.k)];
+    var set2 = [];
+    
+    for (var i = 0; i < right.length; i++) {
+      for (var j = 0; j < set.length; j++) {
+        
+        // only uncomplete
+        if (set[j].leftk <= 0) {
+          set2.push(set[j]);
+          continue;
+        }
+        
+        // add terminals
+        if (right[i].type === GType.T) {
+          set[j].addGEl(right[i]);
+          set2.push(set[j]);
+          continue;
+        }
+        
+        // expand nonterminals
+        set2 = set2.concat(this.firstOp_exp(set[j], right[i]));
+        
+      }
+      set = set2;
+      set2 = [];
+    }
+    
+    return set;
+  },
+  
+  firstOp_exp: function(el, N) {
+    var set = [el.clone()];
+    var set2 = [];
+    var set3 = [];
+    
+    for (var r = 0; r < this.IG.R.length; r++) {
+      var cr = this.IG.R[r];
+      
+      // skip irrelevant rules
+      if (cr.left.value !== N.value) continue;
+      
+      for (var i = 0; i < cr.right.length; i++) {
+        for (var j = 0; j < set.length; j++) {
+          
+          // only uncomplete
+          if (set[j].leftk <= 0) {
+            set2.push(set[j]);
+            continue;
+          }
+          
+          // add terminals
+          if (cr.right[i].type === GType.T) {
+            set[j].addGEl(cr.right[i]);
+            set2.push(set[j]);
+            continue;
+          }
+          
+          // expand nonterminals
+          set2 = set2.concat(this.firstOp_exp(set[j], cr.right[i]));
+          
+        }
+        set = set2;
+        set2 = [];
+      }
+      
+      set3 = set3.concat(set);
+      set = [el.clone()];
+      set2 = [];
+    }
+    
+    return set3;
+  },
+  
+  firstPlusOp: function(str1, str2) {
+    
+    //(...)
+  }
+  
+};
