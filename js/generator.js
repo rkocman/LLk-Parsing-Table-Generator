@@ -43,15 +43,6 @@ Grammar.prototype.addR = function(grule) {
 
 
 ////
-// INPUT PARSER MODIFICATION
-//////
-
-parser.yy.parseError = function parseError(str, hash) {
-    throw hash.line+1;
-};
-
-
-////
 // PARSING TABLE GENERATOR GUI
 //////
 
@@ -92,6 +83,8 @@ var PTG = {
       this.setError("Error: Empty input grammar");
       return;
     }
+    
+    ParserHandler.start();
     try {
       parser.parse(this.inputG);
     } catch (err) {
@@ -141,3 +134,43 @@ function select_all(el) {
     textRange.select();
   }
 }
+
+
+////
+// INPUT PARSER MODIFICATION
+//////
+
+parser.yy.parseError = function parseError(str, hash) {
+    throw hash.line+1;
+};
+
+
+////
+// INPUT PARSER HANDLER
+//////
+
+var PHStatus = {
+  OK : 0,
+  FAIL : 0
+};
+
+var PHState = {
+    NONE : 0,
+    TOKENDEF : 1
+};
+
+var ParserHandler = {
+  
+  IG : undefined,
+  status : PHStatus.OK,
+  state : PHState.NONE,
+  
+  start : function() {
+    this.IG = new Grammar();
+  },
+  
+  tryme : function(text) {
+    alert(text);
+  }
+  
+};

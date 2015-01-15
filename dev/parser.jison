@@ -27,11 +27,11 @@
 %% /* Input Grammar */
 
 start 
-    : head body EOF
+    : head body EOF { ParserHandler.tryme("start"); }
     ;
 
 token
-    : ATOKEN
+    : ATOKEN { ParserHandler.tryme(yytext); }
     | VTOKEN
     ;
     
@@ -41,7 +41,7 @@ head
     ;
 
 head2
-    : token head2
+    : token head2 { ParserHandler.tryme("head"); }
     | head
     ;
 
