@@ -27,22 +27,26 @@
 %% /* Input Grammar */
 
 start 
-    : head body EOF { ParserHandler.tryme("start"); }
+    : head body EOF { ParserHandler.finish(); }
     ;
 
 token
-    : ATOKEN { ParserHandler.tryme(yytext); }
-    | VTOKEN
+    : ATOKEN { $$ = [new GElement(yytext, GType.A)]; }
+    | VTOKEN { $$ = [new GElement(yytext, GType.V)]; }
     ;
     
 head
-    : /* eps */
-    | TOKENDEF token head2
+    : headdef head { ParserHandler.setT($1.concat($2)); }
+    | /* eps */ { $$ = []; }
     ;
 
-head2
-    : token head2 { ParserHandler.tryme("head"); }
-    | head
+headdef
+    : TOKENDEF token headdef2 { $$ = $2.concat($3); }
+    ;
+
+headdef2
+    : token headdef2 { $$ = $1.concat($2); }
+    | /* eps */ { $$ = []; }
     ;
 
 body
@@ -50,22 +54,16 @@ body
     ;
 
 body2
-    : /* eps */
-    | rule body2
+    : rule body2
+    | /* eps */
     ;
 
 rule
-    : token ':' ruleb ';'
+    : token ':' rule2 ';' { ParserHandler.setR($1[0], $3); }
     ;
 
-ruleb
-    : /* eps */
-    | token ruleb2
-    | '|' ruleb
-    ;
-
-ruleb2
-    : /* eps */
-    | token ruleb2
-    | '|' ruleb
+rule2
+    : token rule2 { $$ = $1.concat($2); }
+    | '|' rule2 { ParserHandler.setHalfR($2); $$ = []; }
+    | /* eps */ { $$ = []; }
     ;

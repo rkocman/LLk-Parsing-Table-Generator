@@ -1,0 +1,43 @@
+%token EOF ATOKEN VTOKEN TOKENDEF BEGIN
+%%
+start 
+    : head body EOF
+    ;
+
+token
+    : ATOKEN
+    | VTOKEN
+    ;
+    
+head
+    : headdef head 
+    | /* eps */ 
+    ;
+
+headdef
+    : TOKENDEF token headdef2 
+    ;
+
+headdef2
+    : token headdef2 
+    | /* eps */ 
+    ;
+
+body
+    : BEGIN rule body2
+    ;
+
+body2
+    : rule body2
+    | /* eps */
+    ;
+
+rule
+    : token ':' rule2 ';' 
+    ;
+
+rule2
+    : token rule2 
+    | '|' rule2 
+    | /* eps */ 
+    ;

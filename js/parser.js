@@ -72,30 +72,45 @@
   }
 */
 var parser = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,3],$V1=[2,4],$V2=[1,7],$V3=[1,8],$V4=[8,9,10,12,15,17,19],$V5=[2,9],$V6=[2,12],$V7=[1,22],$V8=[2,15],$V9=[1,26];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[2,5],$V2=[1,9],$V3=[1,10],$V4=[11,13],$V5=[2,8],$V6=[8,9,11,13,16,18,19],$V7=[2,11],$V8=[2,15],$V9=[1,23];
 var parser = {trace: function trace() { },
 yy: {},
-symbols_: {"error":2,"start":3,"head":4,"body":5,"EOF":6,"token":7,"ATOKEN":8,"VTOKEN":9,"TOKENDEF":10,"head2":11,"BEGIN":12,"rule":13,"body2":14,":":15,"ruleb":16,";":17,"ruleb2":18,"|":19,"$accept":0,"$end":1},
-terminals_: {2:"error",6:"EOF",8:"ATOKEN",9:"VTOKEN",10:"TOKENDEF",12:"BEGIN",15:":",17:";",19:"|"},
-productions_: [0,[3,3],[7,1],[7,1],[4,0],[4,3],[11,2],[11,1],[5,3],[14,0],[14,2],[13,4],[16,0],[16,2],[16,2],[18,0],[18,2],[18,2]],
+symbols_: {"error":2,"start":3,"head":4,"body":5,"EOF":6,"token":7,"ATOKEN":8,"VTOKEN":9,"headdef":10,"TOKENDEF":11,"headdef2":12,"BEGIN":13,"rule":14,"body2":15,":":16,"rule2":17,";":18,"|":19,"$accept":0,"$end":1},
+terminals_: {2:"error",6:"EOF",8:"ATOKEN",9:"VTOKEN",11:"TOKENDEF",13:"BEGIN",16:":",18:";",19:"|"},
+productions_: [0,[3,3],[7,1],[7,1],[4,2],[4,0],[10,3],[12,2],[12,0],[5,3],[15,2],[15,0],[14,4],[17,2],[17,2],[17,0]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
 var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
- ParserHandler.tryme("jedem"); 
+ ParserHandler.finish(); 
 break;
 case 2:
- ParserHandler.tryme(yytext); 
+ this.$ = [new GElement(yytext, GType.A)]; 
 break;
-case 6:
- ParserHandler.tryme("head"); 
+case 3:
+ this.$ = [new GElement(yytext, GType.V)]; 
+break;
+case 4:
+ ParserHandler.setT($$[$0-1].concat($$[$0])); 
+break;
+case 5: case 8: case 15:
+ this.$ = []; 
+break;
+case 6: case 7: case 13:
+ this.$ = $$[$0-1].concat($$[$0]); 
+break;
+case 12:
+ ParserHandler.setR($$[$0-3][0], $$[$0-1]); 
+break;
+case 14:
+ ParserHandler.setHalfR($$[$0]); this.$ = []; 
 break;
 }
 },
-table: [{3:1,4:2,10:$V0,12:$V1},{1:[3]},{5:4,12:[1,5]},{7:6,8:$V2,9:$V3},{6:[1,9]},{7:11,8:$V2,9:$V3,13:10},{4:14,7:13,8:$V2,9:$V3,10:$V0,11:12,12:$V1},o($V4,[2,2]),o($V4,[2,3]),{1:[2,1]},{6:$V5,7:11,8:$V2,9:$V3,13:16,14:15},{15:[1,17]},{12:[2,5]},{4:14,7:13,8:$V2,9:$V3,10:$V0,11:18,12:$V1},{12:[2,7]},{6:[2,8]},{6:$V5,7:11,8:$V2,9:$V3,13:16,14:19},{7:21,8:$V2,9:$V3,16:20,17:$V6,19:$V7},{12:[2,6]},{6:[2,10]},{17:[1,23]},{7:25,8:$V2,9:$V3,17:$V8,18:24,19:$V9},{7:21,8:$V2,9:$V3,16:27,17:$V6,19:$V7},o([6,8,9],[2,11]),{17:[2,13]},{7:25,8:$V2,9:$V3,17:$V8,18:28,19:$V9},{7:21,8:$V2,9:$V3,16:29,17:$V6,19:$V7},{17:[2,14]},{17:[2,16]},{17:[2,17]}],
-defaultActions: {9:[2,1],12:[2,5],14:[2,7],15:[2,8],18:[2,6],19:[2,10],24:[2,13],27:[2,14],28:[2,16],29:[2,17]},
+table: [{3:1,4:2,10:3,11:$V0,13:$V1},{1:[3]},{5:5,13:[1,6]},{4:7,10:3,11:$V0,13:$V1},{7:8,8:$V2,9:$V3},{6:[1,11]},{7:13,8:$V2,9:$V3,14:12},{13:[2,4]},o($V4,$V5,{12:14,7:15,8:$V2,9:$V3}),o($V6,[2,2]),o($V6,[2,3]),{1:[2,1]},{6:$V7,7:13,8:$V2,9:$V3,14:17,15:16},{16:[1,18]},o($V4,[2,6]),o($V4,$V5,{7:15,12:19,8:$V2,9:$V3}),{6:[2,9]},{6:$V7,7:13,8:$V2,9:$V3,14:17,15:20},{7:22,8:$V2,9:$V3,17:21,18:$V8,19:$V9},o($V4,[2,7]),{6:[2,10]},{18:[1,24]},{7:22,8:$V2,9:$V3,17:25,18:$V8,19:$V9},{7:22,8:$V2,9:$V3,17:26,18:$V8,19:$V9},o([6,8,9],[2,12]),{18:[2,13]},{18:[2,14]}],
+defaultActions: {7:[2,4],11:[2,1],16:[2,9],20:[2,10],25:[2,13],26:[2,14]},
 parseError: function parseError(str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -574,15 +589,15 @@ case 1:/* skip single-line comment */
 break;
 case 2:/* skip multi-line comment */
 break;
-case 3:return 10
+case 3:return 11
 break;
-case 4:return 12
+case 4:return 13
 break;
-case 5:return 15
+case 5:return 16
 break;
 case 6:return 19
 break;
-case 7:return 17
+case 7:return 18
 break;
 case 8:return 8
 break;
