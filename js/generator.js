@@ -76,10 +76,12 @@ var PTG = {
     if (!this.handleInputForm()) return;
     
     if (!this.handleInputParse()) return;
-    if (this.config === PTGConfig.FULL) {
+    if (this.config === PTGConfig.FULL ||
+        ParserHandler.status !== PHStatus.OK) {
       out.title("Parsed Rules");
       out.grammar(ParserHandler.IG);
     }
+    if (!this.handleInputSemanticErrors()) return;
     
     TableGenerator.construct(ParserHandler.IG);
     
@@ -117,17 +119,35 @@ var PTG = {
       this.setError("Error: Invalid input grammar (error on line "+err+")");
       return false;
     }
-    
-    if (ParserHandler.status === PHStatus.FAILN) {
-      this.setError("Error: Invalid input grammar (rule with terminal on the left side)");
-      return false;
-    }
-    
-    if (ParserHandler.status === PHStatus.FAILR) {
-      this.setError("Error: Invalid input grammar (duplicate rules)");
-      return false;
-    }
       
+    return true;
+  },
+  
+  handleInputSemanticErrors: function() {
+    if (ParserHandler.status === PHStatus.FAILN) {
+      this.setError("Error: Invalid input grammar \
+        (rule with terminal "+ParserHandler.statusText+" on the left side)");
+      return false;
+    }
+    
+    if (ParserHandler.status === PHStatus.FAILRD) {
+      this.setError("Error: Invalid input grammar \
+        (duplicate rules for nonterminal "+ParserHandler.statusText+")");
+      return false;
+    }
+    
+    if (ParserHandler.status === PHStatus.FAILRM) {
+      this.setError("Error: Invalid input grammar \
+        (missing rule for nonterminal "+ParserHandler.statusText+")");
+      return false;
+    }
+    
+    if (ParserHandler.status === PHStatus.FAILRL) {
+      this.setError("Error: Invalid input grammar \
+        (left recursion with nonterminal "+ParserHandler.statusText+")");
+      return false;
+    }
+    
     return true;
   },
 
@@ -188,18 +208,22 @@ parser.yy.parseError = function parseError(str, hash) {
 var PHStatus = {
   OK : 0,
   FAILN : 1,  // Fail terminal 
-  FAILR : 2   // Fail rules
+  FAILRD : 2, // Duplicate rule
+  FAILRM : 3, // Missing rule
+  FAILRL : 4  // Left recursive rule
 };
 
 var ParserHandler = {
   
   IG : undefined,
   status : PHStatus.OK,
+  statusText : "",
   halves : undefined,
   
   start : function() {
     this.IG = new Grammar();
     this.status = PHStatus.OK;
+    this.statusText = "";
     this.halves = [];
   },
   
@@ -237,9 +261,12 @@ var ParserHandler = {
   
   setR : function(left, right) {
     var lel = this.convert(left);
+    
     // Test nonterminal on the left side
-    if (lel.type === GType.T)
+    if (lel.type === GType.T) {
       this.status = PHStatus.FAILN;
+      this.statusText = lel.value;
+    }
     
     // Rule
     var rule = new GRule();
@@ -261,31 +288,167 @@ var ParserHandler = {
   
   finish : function() {
     
+    if (this.status !== PHStatus.OK) return;
+    
     // Test duplicate rules
+    if (!this.testDuplicate()) return;
+    
+    // Test nonterminals without rules
+    if (!this.testMissing()) return;
+    
+    // Test left recursion
+    this.testLeftRecursion();
+    
+  },
+  
+  testDuplicate : function() {
     var rulei, rulej, same;
     for (var i = 0; i < this.IG.R.length; i++) {
       rulei = this.IG.R[i];
       
       for (var j = 0; j < this.IG.R.length; j++) {
         rulej = this.IG.R[j];
+        
         if (i === j) continue;
-        
         if (rulei.left.value !== rulej.left.value) continue;
-        
         if (rulei.right.length !== rulej.right.length) continue;
         
         same = true;
         for (var k = 0; k < rulei.right.length; k++) {
           if (rulei.right[k].value !== rulej.right[k].value) same = false;
         }
-        if (same) this.status = PHStatus.FAILR;
+        if (same) { 
+          this.status = PHStatus.FAILRD;
+          this.statusText = rulei.left.value;
+          return false;
+        }
       }
+    }
+    return true;
+  },
+  
+  testMissing : function() {
+    var rulei, elj, found;
+    var onleft = [];
+    var onright = [];
+    
+    // fill arrays
+    for (var i = 0; i < this.IG.R.length; i++) {
+      rulei = this.IG.R[i];
+      onleft.push(rulei.left.value);
       
+      for (var j = 0; j < rulei.right.length; j++) {
+        elj = rulei.right[j];
+        if (elj.type === GType.N)
+          onright.push(elj.value);
+      }
     }
     
-    // TODO : test nonterminals without rules
-    // TODO : test left recursion
+    // check for missing
+    for (var i = 0; i < onright.length; i++) {
+      found = false;
+      for (var j = 0; j < onleft.length; j++) {
+        if (onright[i] === onleft[j]) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        this.status = PHStatus.FAILRM;
+        this.statusText = onright[i];
+        return false;
+      }
+    }
     
+    return true;
+  },
+  
+  prepareEmptySet : function() {
+    var rulei, elj;
+    var olds = [];
+    var news = [];
+    
+    do {
+      olds = news;
+      news = [];
+      
+      for (var i = 0; i < this.IG.R.length; i++) {
+        rulei = this.IG.R[i];
+        
+        // count rules with eps
+        if (rulei.right.length === 0) {
+          news.push(rulei.left.value);
+          continue;
+        }
+        
+        // count rules with all eps nonterminals
+        for (var j = 0; j < rulei.right.length; j++) {
+          elj = rulei.right[j];
+          
+          if (elj.type === GType.T) 
+            break;
+          
+          if ($.inArray(elj.value, olds) !== -1) {
+            if (j !== rulei.right.length-1)
+              continue;
+            else
+              news.push(rulei.left.value);
+          }
+          
+          break;
+        }
+      }
+      
+    } while (olds.length !== news.length);
+    
+    return news;
+  },
+  
+  testLeftRecursion : function() {
+    var rulei, elj;
+    var empty = this.prepareEmptySet();
+    
+    for (var i = 0; i < this.IG.R.length; i++) {
+      rulei = this.IG.R[i];
+      
+      for (var j = 0; j < rulei.right.length; j++) {
+        elj = rulei.right[j];
+        
+        if (elj.type === GType.T) break;
+        
+        this.testLeftRecusion_cont([], elj.value, empty);
+        
+        if ($.inArray(elj.value, empty) === -1) break;
+      }
+    }
+  },
+  
+  testLeftRecusion_cont : function(before, current, empty) {
+    var rulei, elj;
+    
+    if ($.inArray(current, before) !== -1) {
+      this.status = PHStatus.FAILRL;
+      this.statusText = current;
+      return;
+    }
+    
+    before = before.concat([current]);
+    
+    for (var i = 0; i < this.IG.R.length; i++) {
+      rulei = this.IG.R[i];
+      
+      if (rulei.left.value !== current) continue;
+      
+      for (var j = 0; j < rulei.right.length; j++) {
+        elj = rulei.right[j];
+        
+        if (elj.type === GType.T) break;
+        
+        this.testLeftRecusion_cont(before, elj.value, empty);
+        
+        if ($.inArray(elj.value, empty) === -1) break;
+      }
+    }
   }
   
 };
