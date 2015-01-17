@@ -649,7 +649,7 @@ var TableGenerator = {
     this.LLks.push(t0);
     
     //(2)
-    var J = [t0];
+    var J = [t0.toFlat()];
     
     //(3)(4)
     var tabi, rowj, folk, setl, newt, newtf;
