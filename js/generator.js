@@ -149,10 +149,13 @@ var PTG = {
     
     TableGenerator.construct(ParserHandler.IG, this.k);
     if (this.config === PTGConfig.FULL) {
-      out.title("LL(k) Tables");
+      out.title("LL("+this.k+") Tables");
       for (var i = 0; i < TableGenerator.LLks.length; i++) {
         out.llkT(TableGenerator.LLks[i]);
       }
+      
+      out.title("Standard LL("+this.k+") Parsing Table");
+      out.sLLkPT(TableGenerator.PT);
     }
     
     this.setOk("OK");
@@ -532,21 +535,30 @@ var out = {
     this.out.html(this.out.html() + html);
   },
   
-  prepRule: function(r) {
+  prepRule: function(grule) {
     var html = 
-      this.prepEl(r.left)+ "→ ";
-    if (r.right.length === 0)
-      html += "<span class=\"eps\">ε</span> ";
-    for (var i = 0; i < r.right.length; i++) {
-      html += this.prepEl(r.right[i]);
+      this.prepEl(grule.left)+ "→ ";
+    html += this.prepElStr(grule.right);
+    return html;
+  },
+  
+  prepElStr: function(array) {
+    var html = "";
+    if (array.length === 0)
+      html += "<span class=\"eps\">ε</span>";
+    for (var i = 0; i < array.length; i++) {
+      if (i === array.length-1)
+        html += this.prepEl(array[i], true);
+      else
+        html += this.prepEl(array[i], false);
     }
     return html;
   },
   
-  prepEl: function(e, nospace) {
+  prepEl: function(gel, nospace) {
     var html = 
-      "<span class=\""+((e.type === GType.N)?"n":"t")+"\">"
-      +e.value+"</span>"+((nospace)? "" : " ");
+      "<span class=\""+((gel.isN())?"n":"t")+"\">"
+      +gel.value+"</span>"+((nospace)? "" : " ");
     return html; 
   },
   
@@ -554,26 +566,15 @@ var out = {
     var html = "<table class=\"llkt\">";
     html += "<caption>Table T<sub>"+t.number+"</sub> (T<sub>";
     html += this.prepEl(t.N, true)+",{";
-    if (t.L.str.length === 0)
-      html += "<span class=\"eps\">ε</span>";
-    for (var i = 0; i < t.L.str.length; i++) {
-      html += this.prepEl(t.L.str[i], true);
-      if (i !== t.L.str.length-1)
-        html += " ";
-    }
+    html += this.prepElStr(t.L.str);
     html += "}</sub>)</caption>";
     html += "<tr><th>u</th><th>Production</th><th>Follow</th></tr>";
-    var rowi, folj, uelj;
+    var rowi, folj;
     for (var i = 0; i < t.rows.length; i++) {
       rowi = t.rows[i];
       
       html += "<tr><td>";
-      if (rowi.u.str.length === 0)
-        html += "<span class=\"eps\">ε</span>";
-      for (var j = 0; j < rowi.u.str.length; j++) {
-        uelj = rowi.u.str[j];
-        html += this.prepEl(uelj);
-      }
+      html += this.prepElStr(rowi.u.str);
       
       html += "</td><td>"+this.prepRule(rowi.prod)+"</td><td>";
       
@@ -595,16 +596,52 @@ var out = {
     var html =
       this.prepEl(f.N, true)+":{";
     for (var i = 0; i < f.sets.length; i++) {
-      if (f.sets[i].str.length === 0)
-        html += "<span class=\"eps\">ε</span>";
-      for (var j = 0; j < f.sets[i].str.length; j++) {
-        html += this.prepEl(f.sets[i].str[j], true);
-        if (j !== f.sets[i].str.length-1)
-          html += " ";
-      }
+      html += this.prepElStr(f.sets[i].str);
       if (i !== f.sets.length-1) html += ", ";
     }
     html += "}";
+    return html;
+  },
+  
+  sLLkPT: function(spt) {
+    var html = "<table class=\"spt\">";
+    html += "<tr><th></th>";
+    for (var i = 0; i < spt.si.length; i++) {
+      if (spt.si[i].type === PTSIType.STR) {
+        html += "<th>";
+        html += this.prepElStr(spt.si[i].str);
+        html += "</th>";
+      }
+      if (spt.si[i].type === PTSIType.END) {
+        html += "<th><span class=\"eps\">ε</span></th>";
+      }
+    }
+    html += "<th> </th>"
+    html += "</tr>";
+    for (var i = 0; i < spt.fi.length; i++) {
+      html += "<tr>";
+      html += "<th>";
+      if (spt.fi[i].type === PTFIType.N) {
+        html += "T<sub>"+spt.fi[i].number+"</sub>";
+      }
+      if (spt.fi[i].type === PTFIType.T) {
+        html += "<span class=\"t\">"+spt.fi[i].value+"</span>";
+      }
+      if (spt.fi[i].type === PTFIType.BOT) {
+        html += "<span class=\"eps\">$</span>";
+      }
+      html += "</th>";
+      for (var j = 0; j < spt.si.length; j++) {
+        html += this.prepCell(spt.field[i][j]);
+      }
+      html += "</tr>";
+    }
+    html += "</table>";
+    this.out.html(this.out.html() + html);
+  },
+  
+  prepCell: function(array) {
+    var html = "<td></td>";
     return html;
   }
   
@@ -675,6 +712,118 @@ FirstKEl.prototype.toFlat = function() {
   return flat;
 };
 
+var PTEType = {
+
+};
+
+var PTEl = function(type) {
+  this.type = type;
+};
+
+var PTFIType = {
+  N   : 1, // nonterminal
+  T   : 2, // terminal
+  BOT : 3  // bottom of pushdown
+};
+
+var PTFirstIn = function(type, value, number) {
+  this.type = type;
+  this.value = value;
+  this.number = number;
+};
+PTFirstIn.prototype.toFlat = function() {
+  var flat;
+  switch(this.type) {
+    case PTFIType.N: flat = this.value; break;
+    case PTFIType.T: flat = ":"+this.value; break;
+    case PTFIType.BOT: flat = "|$"; break;
+  };
+  return flat;
+};
+
+PTSIType = {
+  STR : 1, // terminals
+  END : 2  // end of input
+};
+
+var PTSecondIn = function(type, str) {
+  this.type = type;
+  this.str = str;
+};
+PTSecondIn.prototype.toFlat = function() {
+  var flat = "";
+  switch(this.type) {
+    case PTSIType.STR:
+      for (var i = 0; i < this.str.length; i++) {
+        flat += this.str[i].value;
+        if (i !== this.str.length-1)
+          flat += ":";
+      }
+      break;
+    case PTSIType.END: flat = "|eps"; break;
+  };
+  return flat;
+};
+
+var ParsingTable = function() {
+  this.fi = [];  // first index
+  this.fif = [];   // only values
+  this.si = [];  // second index
+  this.sif = [];   // only values
+  
+  this.field = [];
+};
+ParsingTable.prototype.init = function(T, Tcounter, k) {
+  // first index
+  var nfi;
+  for (var i = 0; i < Tcounter; i++) {
+    nfi = new PTFirstIn(PTFIType.N, "T"+i, i);
+    this.fi.push(nfi);
+    this.fif.push(nfi.toFlat());
+  }
+  for (var i = 0; i < T.length; i++) {
+    nfi = new PTFirstIn(PTFIType.T, T[i].value);
+    this.fi.push(nfi);
+    this.fif.push(nfi.toFlat());
+  }
+  nfi = new PTFirstIn(PTFIType.BOT);
+  this.fi.push(nfi);
+  this.fif.push(nfi.toFlat());
+  
+  // second index
+  var nsi;
+  var ins = [];
+  for (var ki = 0; ki < k; ki++) {
+    ins[ki] = 0;
+  }
+  while (ins[0] < T.length) {
+    nsi = new PTSecondIn(PTSIType.STR, []);
+    for (var ki = 0; ki < k; ki++) {
+      if (ins[ki] < T.length)
+        nsi.str.push(T[ins[ki]]);
+    }
+    ins[k-1]++;
+    for (var ki = k-1; ki >=0 ; ki--) {
+      if (ins[ki] > T.length) {
+        ins[ki-1]++;
+        ins[ki] = 0;
+      }
+    }
+    addToArrayFlat(nsi, nsi.toFlat(), this.si, this.sif);
+  }
+  nfi = new PTSecondIn(PTSIType.END);
+  this.si.push(nfi);
+  this.sif.push(nfi.toFlat());
+  
+  // fields
+  for (var i = 0; i < this.fi.length; i++) {
+    this.field[i] = [];
+    for (var j = 0; j < this.si.length; j++) {
+      this.field[i][j] = [];
+    }
+  }
+};
+
 var TableGenerator = {
   
   IG: undefined,
@@ -683,14 +832,18 @@ var TableGenerator = {
   Tcounter: 0,
   
   LLks: [],
+  PT: undefined,
   
   construct: function(IG, k) {
     this.IG = IG;
     this.k = k;
     this.Tcounter = 0;
     this.LLks = [];
+    this.PT = new ParsingTable();
     
     this.constructLLkTs();
+    
+    this.PT.init(this.IG.T, this.Tcounter, this.k);
     
     //(...)
   },
