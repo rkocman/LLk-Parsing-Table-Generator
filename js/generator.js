@@ -6,6 +6,43 @@
 
 
 ////
+// COMMON
+//////
+
+function selectContent(el) {
+  if (typeof window.getSelection !== "undefined" && 
+      typeof document.createRange !== "undefined") {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } else if (typeof document.selection !== "undefined" && 
+    typeof document.body.createTextRange !== "undefined") {
+    var textRange = document.body.createTextRange();
+    textRange.moveToElementText(el);
+    textRange.select();
+  }
+};
+
+function inArray(el, array) {
+  return ($.inArray(el, array) === -1)? false : true;
+};
+
+function addToArray(el, array) {
+  if (!inArray(el, array))
+    array.push(el);
+};
+
+function addToArrayFlat(el, elf, array, arrayf) {
+  if (!inArray(elf, arrayf)) {
+    arrayf.push(elf);
+    array.push(el);
+  }
+};
+
+
+////
 // GRAMMAR OBJECTS
 //////
 
@@ -21,30 +58,56 @@ var GElement = function(value, type) {
   this.value = value;
   this.type = type;
 };
+GElement.prototype.isT = function() {
+  return (this.type === GType.T)? true : false;
+};
+GElement.prototype.isN = function() {
+  return (this.type === GType.N)? true : false;
+};
 
 var GRule = function() {
   this.left;
   this.right = [];
 };
-GRule.prototype.setLeft = function(gelement) {
-  this.left = gelement;
+GRule.prototype.setLeft = function(gel) {
+  this.left = gel;
 };
-GRule.prototype.addRight = function(gelement) {
-  this.right.push(gelement);
+GRule.prototype.addRight = function(gel) {
+  this.right.push(gel);
 };
 
 var Grammar = function() {
-  this.T = [];
-  this.R = [];
+  this.N = [];        // nonterminals
+  this.Nf = [];         // only values
+  this.T = [];        // terminals
+  this.Tf = [];         // only values
+  this.R = [];        // rules  
+  this.S = undefined; // starting nonterminal
 };
-Grammar.prototype.addT = function(gelement) {
-  this.T.push(gelement);
+Grammar.prototype.addT = function(gel) {
+  addToArrayFlat(gel, gel.value, this.T, this.Tf);
 };
 Grammar.prototype.addR = function(grule) {
   this.R.push(grule);
 };
-Grammar.prototype.startN = function() {
-  return this.R[0].left;
+Grammar.prototype.parseR = function() {
+  // Set S
+  this.S = this.R[0].left;
+  
+  // Fill N and T
+  var grulei, gelj;
+  for (var i = 0; i < this.R.length; i++) {
+    grulei = this.R[i];
+    
+    addToArrayFlat(grulei.left, grulei.left.value, this.N, this.Nf);
+    
+    for (var j = 0; j < grulei.right.length; j++) {
+      gelj = grulei.right[j];
+      
+      if (gelj.isN()) addToArrayFlat(gelj, gelj.value, this.N, this.Nf);
+      if (gelj.isT()) addToArrayFlat(gelj, gelj.value, this.T, this.Tf);
+    }
+  }
 };
 
 
@@ -52,19 +115,20 @@ Grammar.prototype.startN = function() {
 // PARSING TABLE GENERATOR GUI
 //////
 
-var StatusClass = {
-  INFO : "info",
-  OK : "ok",
+var PTGStatus = {
+  INFO  : "info",
+  OK    : "ok",
   ERROR : "error"
 };
 
 var PTGConfig = {
-  FULL : "full",
+  FULL    : "full",
   COMPACT : "compact"
 };
 
 var PTG = {
 
+  // form
   inputG : undefined,
   k : undefined,
   config : undefined,
@@ -83,7 +147,7 @@ var PTG = {
     }
     if (!this.handleInputSemanticErrors()) return;
     
-    TableGenerator.construct(ParserHandler.IG);
+    TableGenerator.construct(ParserHandler.IG, this.k);
     if (this.config === PTGConfig.FULL) {
       out.title("LL(k) Tables");
       for (var i = 0; i < TableGenerator.LLks.length; i++) {
@@ -95,7 +159,6 @@ var PTG = {
   },
   
   handleInputForm: function() {
-    
     this.k = parseInt($("input[name=k]").val());
     if (isNaN(this.k) || this.k < 1 || this.k > 100) {
       this.setError("Error: Invalid k");
@@ -160,42 +223,21 @@ var PTG = {
   statusBar: undefined,
   setInfo: function(msg) {
     this.statusBar.text(msg);
-    this.statusBar.attr("class", StatusClass.INFO);
+    this.statusBar.attr("class", PTGStatus.INFO);
   },
   setOk: function(msg) {
     this.statusBar.text(msg);
-    this.statusBar.attr("class", StatusClass.OK);
+    this.statusBar.attr("class", PTGStatus.OK);
   },
   setError: function(msg) {
     this.statusBar.text(msg);
-    this.statusBar.attr("class", StatusClass.ERROR);
+    this.statusBar.attr("class", PTGStatus.ERROR);
   }
 
 };
 $(function() {
   PTG.statusBar = $("#status span");
 });
-
-
-////
-// CONTENT SELECT HELPER
-//////
-
-function select_all(el) {
-  if (typeof window.getSelection !== "undefined" && 
-      typeof document.createRange !== "undefined") {
-    var range = document.createRange();
-    range.selectNodeContents(el);
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  } else if (typeof document.selection !== "undefined" && 
-    typeof document.body.createTextRange !== "undefined") {
-    var textRange = document.body.createTextRange();
-    textRange.moveToElementText(el);
-    textRange.select();
-  }
-}
 
 
 ////
@@ -212,11 +254,11 @@ parser.yy.parseError = function parseError(str, hash) {
 //////
 
 var PHStatus = {
-  OK : 0,
-  FAILN : 1,  // Fail terminal 
-  FAILRD : 2, // Duplicate rule
-  FAILRM : 3, // Missing rule
-  FAILRL : 4  // Left recursive rule
+  OK      : 0,
+  FAILN   : 1, // Fail terminal 
+  FAILRD  : 2, // Duplicate rule
+  FAILRM  : 3, // Missing rule
+  FAILRL  : 4  // Left recursive rule
 };
 
 var ParserHandler = {
@@ -234,66 +276,67 @@ var ParserHandler = {
   },
   
   setT : function(array) {
+    var geli;
     for (var i = 0; i < array.length; i++) {
-      array[i].type = GType.T;
-      this.IG.addT(array[i]);
+      geli = array[i];
+      
+      geli.type = GType.T;
+      this.IG.addT(geli);
     }
   },
   
-  convert : function(el) {
-    if (el.type === GType.V) {
-      el.type = GType.T;
-      return el;
+  convert : function(gel) {
+    if (gel.type === GType.V) {
+      gel.type = GType.T;
+      return gel;
     }
     
-    el.type = GType.N;
-    for (var i = 0; i < this.IG.T.length; i++) {
-      if (el.value === this.IG.T[i].value) {
-        el.type = GType.T;
-        break;
-      }
+    if (inArray(gel.value, this.IG.Tf)) {
+      gel.type = GType.T;
+      return gel;
     }
-    return el;
+    
+    gel.type = GType.N;
+    return gel;
   },
   
   setHalfR : function(right) {
-    var rule = new GRule();
+    var grule = new GRule();
     for (var i = 0; i < right.length; i++) {
-      var el = this.convert(right[i]);
-      rule.addRight(el);
+      var gel = this.convert(right[i]);
+      grule.addRight(gel);
     }
-    this.halves.push(rule);
+    this.halves.push(grule);
   },
   
   setR : function(left, right) {
-    var lel = this.convert(left);
+    var lgel = this.convert(left);
     
     // Test nonterminal on the left side
-    if (lel.type === GType.T) {
+    if (lgel.type === GType.T) {
       this.status = PHStatus.FAILN;
-      this.statusText = lel.value;
+      this.statusText = lgel.value;
     }
     
     // Rule
-    var rule = new GRule();
-    rule.setLeft(lel);
+    var grule = new GRule();
+    grule.setLeft(lgel);
     for (var i = 0; i < right.length; i++) {
       var el = this.convert(right[i]);
-      rule.addRight(el);
+      grule.addRight(el);
     }
-    this.IG.addR(rule);
+    this.IG.addR(grule);
     
     // Finish halves
     for (var i = this.halves.length-1; i >= 0; i--) {
-      rule = this.halves[i];
-      rule.setLeft(lel);
-      this.IG.addR(rule);
+      grule = this.halves[i];
+      grule.setLeft(lgel);
+      this.IG.addR(grule);
     }
     this.halves = [];
   },
   
-  finish : function() {
-    
+  finish : function() { 
     if (this.status !== PHStatus.OK) return;
     
     // Test duplicate rules
@@ -305,27 +348,30 @@ var ParserHandler = {
     // Test left recursion
     this.testLeftRecursion();
     
+    // Parse rules
+    this.IG.parseR();
+    
   },
   
   testDuplicate : function() {
-    var rulei, rulej, same;
+    var grulei, grulej, same;
     for (var i = 0; i < this.IG.R.length; i++) {
-      rulei = this.IG.R[i];
+      grulei = this.IG.R[i];
       
       for (var j = 0; j < this.IG.R.length; j++) {
-        rulej = this.IG.R[j];
+        grulej = this.IG.R[j];
         
         if (i === j) continue;
-        if (rulei.left.value !== rulej.left.value) continue;
-        if (rulei.right.length !== rulej.right.length) continue;
+        if (grulei.left.value !== grulej.left.value) continue;
+        if (grulei.right.length !== grulej.right.length) continue;
         
         same = true;
-        for (var k = 0; k < rulei.right.length; k++) {
-          if (rulei.right[k].value !== rulej.right[k].value) same = false;
+        for (var k = 0; k < grulei.right.length; k++) {
+          if (grulei.right[k].value !== grulej.right[k].value) same = false;
         }
         if (same) { 
           this.status = PHStatus.FAILRD;
-          this.statusText = rulei.left.value;
+          this.statusText = grulei.left.value;
           return false;
         }
       }
@@ -334,19 +380,19 @@ var ParserHandler = {
   },
   
   testMissing : function() {
-    var rulei, elj, found;
+    var grulei, gelj, found;
     var onleft = [];
     var onright = [];
     
     // fill arrays
     for (var i = 0; i < this.IG.R.length; i++) {
-      rulei = this.IG.R[i];
-      onleft.push(rulei.left.value);
+      grulei = this.IG.R[i];
+      onleft.push(grulei.left.value);
       
-      for (var j = 0; j < rulei.right.length; j++) {
-        elj = rulei.right[j];
-        if (elj.type === GType.N)
-          onright.push(elj.value);
+      for (var j = 0; j < grulei.right.length; j++) {
+        gelj = grulei.right[j];
+        if (gelj.isN())
+          onright.push(gelj.value);
       }
     }
     
@@ -370,7 +416,7 @@ var ParserHandler = {
   },
   
   prepareEmptySet : function() {
-    var rulei, elj;
+    var grulei, gelj;
     var olds = [];
     var news = [];
     
@@ -379,26 +425,26 @@ var ParserHandler = {
       news = [];
       
       for (var i = 0; i < this.IG.R.length; i++) {
-        rulei = this.IG.R[i];
+        grulei = this.IG.R[i];
         
         // count rules with eps
-        if (rulei.right.length === 0) {
-          news.push(rulei.left.value);
+        if (grulei.right.length === 0) {
+          news.push(grulei.left.value);
           continue;
         }
         
         // count rules with all eps nonterminals
-        for (var j = 0; j < rulei.right.length; j++) {
-          elj = rulei.right[j];
+        for (var j = 0; j < grulei.right.length; j++) {
+          gelj = grulei.right[j];
           
-          if (elj.type === GType.T) 
+          if (gelj.isT()) 
             break;
           
-          if ($.inArray(elj.value, olds) !== -1) {
-            if (j !== rulei.right.length-1)
+          if (inArray(gelj.value, olds)) {
+            if (j !== grulei.right.length-1)
               continue;
             else
-              news.push(rulei.left.value);
+              news.push(grulei.left.value);
           }
           
           break;
@@ -411,28 +457,28 @@ var ParserHandler = {
   },
   
   testLeftRecursion : function() {
-    var rulei, elj;
+    var grulei, gelj;
     var empty = this.prepareEmptySet();
     
     for (var i = 0; i < this.IG.R.length; i++) {
-      rulei = this.IG.R[i];
+      grulei = this.IG.R[i];
       
-      for (var j = 0; j < rulei.right.length; j++) {
-        elj = rulei.right[j];
+      for (var j = 0; j < grulei.right.length; j++) {
+        gelj = grulei.right[j];
         
-        if (elj.type === GType.T) break;
+        if (gelj.isT()) break;
         
-        this.testLeftRecusion_cont([], elj.value, empty);
+        this.testLeftRecusion_cont([], gelj.value, empty);
         
-        if ($.inArray(elj.value, empty) === -1) break;
+        if (!inArray(gelj.value, empty)) break;
       }
     }
   },
   
   testLeftRecusion_cont : function(before, current, empty) {
-    var rulei, elj;
+    var grulei, gelj;
     
-    if ($.inArray(current, before) !== -1) {
+    if (inArray(current, before)) {
       this.status = PHStatus.FAILRL;
       this.statusText = current;
       return;
@@ -441,18 +487,18 @@ var ParserHandler = {
     before = before.concat([current]);
     
     for (var i = 0; i < this.IG.R.length; i++) {
-      rulei = this.IG.R[i];
+      grulei = this.IG.R[i];
       
-      if (rulei.left.value !== current) continue;
+      if (grulei.left.value !== current) continue;
       
-      for (var j = 0; j < rulei.right.length; j++) {
-        elj = rulei.right[j];
+      for (var j = 0; j < grulei.right.length; j++) {
+        gelj = grulei.right[j];
         
-        if (elj.type === GType.T) break;
+        if (gelj.type === GType.T) break;
         
-        this.testLeftRecusion_cont(before, elj.value, empty);
+        this.testLeftRecusion_cont(before, gelj.value, empty);
         
-        if ($.inArray(elj.value, empty) === -1) break;
+        if (!inArray(gelj.value, empty)) break;
       }
     }
   }
@@ -535,7 +581,9 @@ var out = {
         html += "<span class=\"emptyf\">-</span>";
       for (var j = 0; j < rowi.follow.length; j++) {
         folj = rowi.follow[j];
-        html += this.prepFollow(folj)+" ";
+        html += this.prepFollow(folj);
+        if (j !== rowi.follow.length-1)
+          html += ", ";
       }
       html += "</td></tr>";
     }
@@ -575,9 +623,9 @@ var FollowEl = function(N, sets) {
   this.sets = sets;
 };
 
-var LLkTRow = function(u, prod, F) {
+var LLkTRow = function(u, grule, F) {
   this.u = u;
-  this.prod = prod;
+  this.prod = grule;
   this.follow = F;
 };
 
@@ -590,15 +638,15 @@ var LLkT = function(count, A, L) {
   
   this.rows = [];
 };
-LLkT.prototype.addRow = function(row) {
-  this.rows.push(row);
+LLkT.prototype.addRow = function(ltrow) {
+  this.rows.push(ltrow);
 };
 LLkT.prototype.toFlat = function() {
-  var flat = "T "+this.N.value+", {";
+  var flat = "T:"+this.N.value+",{";
   for (var i = 0; i < this.L.str.length; i++) {
     flat += this.L.str[i].value;
     if (i !== this.L.str.length-1)
-      flat += " ";
+      flat += ":";
   }
   flat += "}";
   return flat;
@@ -609,10 +657,10 @@ var FirstKEl = function(k) {
   this.k = 0;
   this.str = [];
 };
-FirstKEl.prototype.addGEl = function(gelement) {
+FirstKEl.prototype.addGEl = function(gel) {
   this.leftk--;
   this.k++;
-  this.str.push(gelement);
+  this.str.push(gel);
 };
 FirstKEl.prototype.clone = function() {
   return jQuery.extend(true, {}, this);
@@ -622,7 +670,7 @@ FirstKEl.prototype.toFlat = function() {
   for (var i = 0; i < this.str.length; i++) {
     flat += this.str[i].value;
     if (i !== this.str.length-1)
-      flat += " ";
+      flat += ":";
   }
   return flat;
 };
@@ -630,11 +678,15 @@ FirstKEl.prototype.toFlat = function() {
 var TableGenerator = {
   
   IG: undefined,
-  LLks: [],
+  k : undefined,
+  
   Tcounter: 0,
   
-  construct: function(IG) {
+  LLks: [],
+  
+  construct: function(IG, k) {
     this.IG = IG;
+    this.k = k;
     this.Tcounter = 0;
     this.LLks = [];
     
@@ -645,7 +697,7 @@ var TableGenerator = {
   
   constructLLkTs: function() {
     //(1)
-    var t0 = this.constructLLkT(this.IG.startN(), new FirstKEl(PTG.k));
+    var t0 = this.constructLLkT(this.IG.S, new FirstKEl(this.k));
     this.LLks.push(t0);
     
     //(2)
@@ -664,7 +716,7 @@ var TableGenerator = {
             
             newt = new LLkT(0, folk.N, setl);
             newtf = newt.toFlat();
-            if ($.inArray(newtf, J) === -1) {
+            if (!inArray(newtf, J)) {
               newt = this.constructLLkT(folk.N, setl);
               this.LLks.push(newt);
               J.push(newtf);
@@ -679,7 +731,7 @@ var TableGenerator = {
     var table = new LLkT(this.Tcounter, N, L);
     this.Tcounter++;
     
-    var first, setu, rulei, nrow, follow;
+    var first, setu, rulei, ltrow, follow;
     for (var i = 0; i < this.IG.R.length; i++) {
       rulei = this.IG.R[i];
       
@@ -695,8 +747,8 @@ var TableGenerator = {
       
       // add rows
       for (var j = 0; j < setu.length; j++) {
-        nrow = new LLkTRow(setu[j], rulei, follow);
-        table.addRow(nrow);
+        ltrow = new LLkTRow(setu[j], rulei, follow);
+        table.addRow(ltrow);
       }
     }
     
@@ -704,7 +756,7 @@ var TableGenerator = {
   },
   
   firstOp: function(right) {
-    var set = [new FirstKEl(PTG.k)];
+    var set = [new FirstKEl(this.k)];
     var set2 = [];
     
     for (var i = 0; i < right.length; i++) {
@@ -717,7 +769,7 @@ var TableGenerator = {
         }
         
         // add terminals
-        if (right[i].type === GType.T) {
+        if (right[i].isT()) {
           set[j].addGEl(right[i]);
           set2.push(set[j]);
           continue;
@@ -784,8 +836,9 @@ var TableGenerator = {
     
     for (var i = 0; i < set1.length; i++) {
       for (var j = 0; j < set2.length; j++) {
-        ip = 0; jp = 0; fel = new FirstKEl(PTG.k);
-        for (var k = 0; k < PTG.k; k++) {
+        
+        ip = 0; jp = 0; fel = new FirstKEl(this.k);
+        for (var k = 0; k < this.k; k++) {
           if (ip < set1[i].str.length) {
             fel.addGEl(set1[i].str[ip]);
             ip++;
@@ -798,10 +851,8 @@ var TableGenerator = {
           }
           break;
         }
-        if ($.inArray(fel.toFlat(), resultcheck) === -1) {
-          result.push(fel);
-          resultcheck.push(fel.toFlat());
-        }
+        addToArrayFlat(fel, fel.toFlat(), result, resultcheck);
+        
       }
     }
     
@@ -810,14 +861,14 @@ var TableGenerator = {
   
   followOp: function(right, L) {
     var result = [];
-    var eli, rest, follow;
+    var geli, rest, follow;
     var first, setu;
     
     for (var i = 0; i < right.length; i++) {
-      eli = right[i];
+      geli = right[i];
       
       // skip terminals
-      if (eli.type === GType.T) continue;
+      if (geli.isT()) continue;
       
       // create rest
       rest = [];
@@ -830,7 +881,7 @@ var TableGenerator = {
       setu = this.firstPlusOp(first, [L]);
       
       // add to result
-      follow = new FollowEl(eli, setu);
+      follow = new FollowEl(geli, setu);
       result.push(follow);
     }
     
