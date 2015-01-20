@@ -1,5 +1,5 @@
 %token EOF ATOKEN VTOKEN TOKENDEF BEGIN
-%%
+%% /* LL(1) */
 start 
     : head body EOF
     ;

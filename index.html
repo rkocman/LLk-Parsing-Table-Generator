@@ -37,11 +37,11 @@
         <p class="code">
           <span ondblclick="selectContent(this)"
           >%token a b<br>
-          %%<br>
+          %% /* LL(2) */<br>
           S : a A a a<br>
           &nbsp; | b A b a ;<br>
-          A : b<br>
-          &nbsp; | /*eps*/ ;</span>
+          A : /*eps*/<br>
+          &nbsp; | b ;</span>
           <br><br>
         </p>
         <h2>Configuration:</h2>

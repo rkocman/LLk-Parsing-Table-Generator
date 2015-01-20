@@ -43,7 +43,10 @@ function addToArrayFlat(el, elf, array, arrayf) {
 
 function indexOf(el, array) {
   var index = $.inArray(el, array);
-  if (index === -1) throw "Invalid index";
+  if (index === -1) { 
+    console.log(el);
+    throw "Invalid index"; 
+  }
   return index;
 };
 
@@ -168,6 +171,7 @@ var PTG = {
     }
     
     this.setOk("OK");
+    this.handleParsingTableErrors();
   },
   
   handleInputForm: function() {
@@ -230,6 +234,12 @@ var PTG = {
     }
     
     return true;
+  },
+  
+  handleParsingTableErrors: function() {
+    if (TableGenerator.status === TGStatus.ERROR) {
+      this.setError("Error: Input is not LL(k) grammar for k = "+this.k);
+    }
   },
 
   statusBar: undefined,
@@ -576,7 +586,11 @@ var out = {
     var html = "<table class=\"llkt\">";
     html += "<caption>Table "+t.name+" ( T<sub>";
     html += this.prepEl(t.N, true)+",{";
-    html += this.prepElStr(t.L.str);
+    for (var i = 0; i < t.L.length; i++) {
+      html += this.prepElStr(t.L[i].str);
+      if (i !== t.L.length-1)
+        html += ", ";
+    }
     html += "} </sub>)</caption>";
     html += "<tr><th>u</th><th>Production</th><th>Follow</th></tr>";
     var rowi, folj;
@@ -686,6 +700,11 @@ $(function() {
 // LL(k) PARSING TABLE GENERATOR
 //////
 
+var TGStatus = {
+  OK    : "ok",
+  ERROR : "error"
+};
+
 var FollowEl = function(N, sets) {
   this.N = N;
   this.sets = sets;
@@ -711,10 +730,14 @@ LLkT.prototype.addRow = function(ltrow) {
 };
 LLkT.prototype.toFlat = function() {
   var flat = "T:"+this.N.value+",{";
-  for (var i = 0; i < this.L.str.length; i++) {
-    flat += this.L.str[i].value;
-    if (i !== this.L.str.length-1)
-      flat += ":";
+  for (var i = 0; i < this.L.length; i++) {
+    for (var j = 0; j < this.L[i].str.length; j++) {
+      flat += this.L[i].str[j].value;
+      if (j !== this.L[i].str.length-1)
+        flat += ":";
+    }
+    if (i !== this.L.length-1)
+      flat += ",";
   }
   flat += "}";
   return flat;
@@ -794,7 +817,7 @@ PTSecondIn.prototype.toFlat = function() {
           flat += ":";
       }
       break;
-    case PTSIType.END: flat = "|eps"; break;
+    case PTSIType.END: flat = ""; break;
   }
   return flat;
 };
@@ -887,6 +910,8 @@ var TableGenerator = {
   LLksf: [],
   PT: undefined,
   
+  status : TGStatus.OK,
+  
   construct: function(IG, k) {
     this.IG = IG;
     this.k = k;
@@ -894,16 +919,18 @@ var TableGenerator = {
     this.LLks = [];
     this.LLksf = [];
     this.PT = new ParsingTable();
+    this.status = TGStatus.OK;
     
     this.constructLLkTs();
-    
     this.PT.init(this.IG.T, this.Tcounter, this.k);
-    //this.fillPT();
+    this.fillPT();
+    
+    this.checkValidity();
   },
   
   constructLLkTs: function() {
     //(1)
-    var t0 = this.constructLLkT(this.IG.S, new FirstKEl(this.k));
+    var t0 = this.constructLLkT(this.IG.S, [new FirstKEl(this.k)]);
     this.LLks.push(t0);
     
     //(2)
@@ -911,27 +938,25 @@ var TableGenerator = {
     J.push(t0.toFlat());
     
     //(3)(4)
-    var tabi, rowj, folk, setl, newt, newtf;
+    var tabi, rowj, folk, newt, newtf;
     for (var i = 0; i < this.LLks.length; i++) {
       tabi = this.LLks[i];
       for (var j = 0; j < tabi.rows.length; j++) {
         rowj = tabi.rows[j];
         for (var k = 0; k < rowj.follow.length; k++) {
           folk = rowj.follow[k];
-          for (var l = 0; l < folk.sets.length; l++) {
-            setl = folk.sets[l];
-            
-            newt = new LLkT(0, folk.N, setl);
-            newtf = newt.toFlat();
-            if (!inArray(newtf, J)) {
-              newt = this.constructLLkT(folk.N, setl);
-              this.LLks.push(newt);
-              J.push(newtf);
-            }
+          
+          newt = new LLkT(0, folk.N, folk.sets);
+          newtf = newt.toFlat();
+          if (!inArray(newtf, J)) {
+            newt = this.constructLLkT(folk.N, folk.sets);
+            this.LLks.push(newt);
+            J.push(newtf);
           }
         }
       }
     }
+    
   },
   
   constructLLkT: function(N, L) {
@@ -947,7 +972,7 @@ var TableGenerator = {
       
       // compute u
       first = this.firstOp(rulei.right);
-      setu = this.firstPlusOp(first, [L]);
+      setu = this.firstPlusOp(first, L);
       
       // compute follow
       follow = this.followOp(rulei.right, L);
@@ -1085,7 +1110,7 @@ var TableGenerator = {
       
       // compute u
       first = this.firstOp(rest);
-      setu = this.firstPlusOp(first, [L]);
+      setu = this.firstPlusOp(first, L);
       
       // add to result
       follow = new FollowEl(geli, setu);
@@ -1095,7 +1120,7 @@ var TableGenerator = {
     return result;
   },
   
-  convNToT: function(N, L) {
+  convNToTableName: function(N, L) {
     var t = new LLkT(0, N, L);
     var tf = t.toFlat();
     var i = indexOf(tf, this.LLksf);
@@ -1119,15 +1144,15 @@ var TableGenerator = {
         el.str = [];
         
         // convert right side of the rule
+        nontl = 0;
         for (var k = 0; k < rowj.prod.right.length; k++) {
           gelk = rowj.prod.right[k];
-          nontl = 0;
           
           if (gelk.isT()) {
             el.str.push(gelk);
           } else {
-            //gelnew = this.convNToT(gelk, rowj.);
-            
+            gelnew = this.convNToTableName(gelk, rowj.follow[nontl].sets);
+            el.str.push(gelnew);
             nontl++;
           }
         }
@@ -1161,6 +1186,18 @@ var TableGenerator = {
     
     //(4)(5)
     //nothing
+  },
+  
+  checkValidity: function() {
+    var PT = this.PT;
+    var field = this.PT.field;
+    
+    for (var i = 0; i < PT.fi.length; i++) {
+      for (var j = 0; j < PT.si.length; j++) {
+        if (field[i][j].length > 1)
+          this.status = TGStatus.ERROR;
+      }
+    }
   }
   
 };
