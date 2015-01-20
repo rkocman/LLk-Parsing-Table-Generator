@@ -4,7 +4,7 @@ LL(k) Parsing Table Generator for Automaton with One-Symbol Reading Head
 
 **Project status:** under construction  
 **Environment:** HTML + JS  
-**Browser compatibility:** IE9+
+**Browser compatibility:** IE9+, FF, Chrome, Opera, ...
 
 
 ## Based on
