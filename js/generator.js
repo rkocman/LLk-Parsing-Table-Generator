@@ -163,7 +163,7 @@ var PTG = {
   
   handleInputForm: function() {
     this.k = parseInt($("input[name=k]").val());
-    if (isNaN(this.k) || this.k < 1 || this.k > 100) {
+    if (isNaN(this.k) || this.k < 1) {
       this.setError("Error: Invalid k");
       return false;
     }
@@ -564,10 +564,10 @@ var out = {
   
   llkT: function(t) {
     var html = "<table class=\"llkt\">";
-    html += "<caption>Table T<sub>"+t.number+"</sub> (T<sub>";
+    html += "<caption>Table T<sub>"+t.number+"</sub> ( T<sub>";
     html += this.prepEl(t.N, true)+",{";
     html += this.prepElStr(t.L.str);
-    html += "}</sub>)</caption>";
+    html += "} </sub>)</caption>";
     html += "<tr><th>u</th><th>Production</th><th>Follow</th></tr>";
     var rowi, folj;
     for (var i = 0; i < t.rows.length; i++) {
@@ -616,7 +616,7 @@ var out = {
         html += "<th><span class=\"eps\">ε</span></th>";
       }
     }
-    html += "<th> </th>"
+    html += "<th> </th>";
     html += "</tr>";
     for (var i = 0; i < spt.fi.length; i++) {
       html += "<tr>";
@@ -634,6 +634,7 @@ var out = {
       for (var j = 0; j < spt.si.length; j++) {
         html += this.prepCell(spt.field[i][j]);
       }
+      html += "<th> </th>";
       html += "</tr>";
     }
     html += "</table>";

@@ -184,7 +184,6 @@ sub {
   border-right-color: #999999;
   border-bottom-color: #999999;
 }
-#output .spt tr:first-child th:last-child {
-  border-right: 0;
-  border-bottom: 0;
+#output .spt th:last-child {
+  border: 0;
 }
