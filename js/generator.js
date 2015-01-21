@@ -6,9 +6,11 @@
 
 
 ////
-// COMMON
+// COMMON FUNCTIONS
 //////
 
+// Select whole content of an html element
+// @param html element
 function selectContent(el) {
   if (typeof window.getSelection !== "undefined" && 
       typeof document.createRange !== "undefined") {
@@ -25,15 +27,28 @@ function selectContent(el) {
   }
 };
 
+// Check if a value is in an array
+// @param value
+// @param array
+// @return {boolean} true|false
 function inArray(el, array) {
   return ($.inArray(el, array) === -1)? false : true;
 };
 
+// Add unique value into an array
+// @param value
+// @param array
 function addToArray(el, array) {
   if (!inArray(el, array))
     array.push(el);
 };
 
+// Add unique object into an array 
+// (one array of objects, one array of flat values)
+// @param object
+// @param flat value
+// @param array of objects
+// @param array of flat values
 function addToArrayFlat(el, elf, array, arrayf) {
   if (!inArray(elf, arrayf)) {
     arrayf.push(elf);
@@ -41,6 +56,11 @@ function addToArrayFlat(el, elf, array, arrayf) {
   }
 };
 
+// Find the index of a value in an array
+// @param value
+// @param array
+// @return {number} index
+// @throw "Invalid index"
 function indexOf(el, array) {
   var index = $.inArray(el, array);
   if (index === -1) { 
@@ -55,6 +75,7 @@ function indexOf(el, array) {
 // GRAMMAR OBJECTS
 //////
 
+// Grammar Element Type
 var GType = {
   T : 1, // terminal
   N : 2, // nonterminal
@@ -63,6 +84,7 @@ var GType = {
   V : 4  // value term
 };
 
+// Grammar Element
 var GElement = function(value, type) {
   this.value = value;
   this.type = type;
@@ -74,6 +96,7 @@ GElement.prototype.isN = function() {
   return (this.type === GType.N)? true : false;
 };
 
+// Grammar Rule
 var GRule = function() {
   this.number;
   this.left;
@@ -86,6 +109,7 @@ GRule.prototype.addRight = function(gel) {
   this.right.push(gel);
 };
 
+// Grammar
 var Grammar = function() {
   this.N = [];        // nonterminals
   this.Nf = [];         // only values
@@ -100,16 +124,16 @@ Grammar.prototype.addT = function(gel) {
 Grammar.prototype.addR = function(grule) {
   this.R.push(grule);
 };
-Grammar.prototype.parseR = function() {
-  // Set S
-  this.S = this.R[0].left;
-  
-  // Set rule numbers
+Grammar.prototype.fillRuleNumbers = function() {
   for (var i = 0; i < this.R.length; i++) {
     this.R[i].number = i+1;
   }
+};
+Grammar.prototype.parseR = function() {
+  // set S
+  this.S = this.R[0].left;
   
-  // Fill N and T
+  // fill N and T
   var grulei, gelj;
   for (var i = 0; i < this.R.length; i++) {
     grulei = this.R[i];
@@ -127,30 +151,38 @@ Grammar.prototype.parseR = function() {
 
 
 ////
-// PARSING TABLE GENERATOR GUI
+// LL(k) PARSING TABLE GENERATOR GUI
 //////
 
+// LL(k) Parsing Table Generator GUI Status
 var PTGStatus = {
   INFO  : "info",
   OK    : "ok",
   ERROR : "error"
 };
 
+// LL(k) Parsing Table Generator GUI Configuration
 var PTGConfig = {
   FULL    : "full",
   COMPACT : "compact"
 };
 
+// LL(k) Parsing Table Generator GUI
 var PTG = {
 
-  // form
+  // form content
   inputG : undefined,
   k : undefined,
   config : undefined,
 
+  statusBar: undefined,
+
   run: function() {
     this.setInfo("Processing...");
     out.clean();
+    
+    // force redraw
+    //this.statusBar.hide().show(0);
     
     if (!this.handleInputForm()) return;
     
@@ -242,7 +274,6 @@ var PTG = {
     }
   },
 
-  statusBar: undefined,
   setInfo: function(msg) {
     this.statusBar.text(msg);
     this.statusBar.attr("class", PTGStatus.INFO);
@@ -275,6 +306,7 @@ parser.yy.parseError = function parseError(str, hash) {
 // INPUT PARSER HANDLER
 //////
 
+// Parser Handler Status
 var PHStatus = {
   OK      : 0,
   FAILN   : 1, // Fail terminal 
@@ -283,6 +315,7 @@ var PHStatus = {
   FAILRL  : 4  // Left recursive rule
 };
 
+// Parser Handler
 var ParserHandler = {
   
   IG : undefined,
@@ -334,13 +367,13 @@ var ParserHandler = {
   setR : function(left, right) {
     var lgel = this.convert(left);
     
-    // Test nonterminal on the left side
+    // test nonterminal on the left side
     if (lgel.type === GType.T) {
       this.status = PHStatus.FAILN;
       this.statusText = lgel.value;
     }
     
-    // Rule
+    // add rule
     var grule = new GRule();
     grule.setLeft(lgel);
     for (var i = 0; i < right.length; i++) {
@@ -349,7 +382,7 @@ var ParserHandler = {
     }
     this.IG.addR(grule);
     
-    // Finish halves
+    // finish halves
     for (var i = this.halves.length-1; i >= 0; i--) {
       grule = this.halves[i];
       grule.setLeft(lgel);
@@ -359,20 +392,20 @@ var ParserHandler = {
   },
   
   finish : function() { 
+    this.IG.fillRuleNumbers();
     if (this.status !== PHStatus.OK) return;
     
-    // Test duplicate rules
+    // test duplicate rules
     if (!this.testDuplicate()) return;
     
-    // Test nonterminals without rules
+    // test nonterminals without rules
     if (!this.testMissing()) return;
     
-    // Test left recursion
+    // test left recursion
     this.testLeftRecursion();
     
-    // Parse rules
+    // parse rules
     this.IG.parseR();
-    
   },
   
   testDuplicate : function() {
@@ -532,6 +565,7 @@ var ParserHandler = {
 // OUTPUT PRINTER
 //////
 
+// Output Printer
 var out = {
   
   out: undefined,
@@ -656,7 +690,7 @@ var out = {
       }
       html += "</th>";
       for (var j = 0; j < spt.si.length; j++) {
-        html += this.prepsCell(spt.field[i][j]);
+        html += this.prepSCell(spt.field[i][j]);
       }
       html += "<th> </th>";
       html += "</tr>";
@@ -665,7 +699,7 @@ var out = {
     this.out.html(this.out.html() + html);
   },
   
-  prepsCell: function(array) {
+  prepSCell: function(array) {
     var html = "";
     if (array.length > 1)
       html += "<td class=\"errorCell\">";
@@ -697,25 +731,29 @@ $(function() {
 
 
 ////
-// LL(k) PARSING TABLE GENERATOR
+// STANDARD LL(k) PARSING TABLE GENERATOR
 //////
 
+// Standard LL(k) Parsing Table Generator Status
 var TGStatus = {
   OK    : "ok",
   ERROR : "error"
 };
 
+// LL(k) Table Follow Element
 var FollowEl = function(N, sets) {
   this.N = N;
   this.sets = sets;
 };
 
+// LL(k) Table Row
 var LLkTRow = function(u, grule, F) {
   this.u = u;
   this.prod = grule;
   this.follow = F;
 };
 
+// LL(k) Table
 var LLkT = function(count, A, L) {
   this.name = "T"+count;
   this.number = count;
@@ -743,6 +781,7 @@ LLkT.prototype.toFlat = function() {
   return flat;
 };
 
+// First(k) String
 var FirstKEl = function(k) {
   this.leftk = k;
   this.k = 0;
@@ -766,24 +805,28 @@ FirstKEl.prototype.toFlat = function() {
   return flat;
 };
 
+// Standard LL(k) Parsing Table Element Type
 var PTEType = {
   ACCEPT : 0,
   POP : 1,
   EXPAND : 2
 };
 
+// Standard LL(k) Parsing Table Element
 var PTEl = function(type, str, rule) {
   this.type = type;
   this.str = str;
   this.rule = rule;
 };
 
+// Standard LL(k) Parsing Table First Index Type
 var PTFIType = {
   N   : 1, // nonterminal
   T   : 2, // terminal
   BOT : 3  // bottom of pushdown
 };
 
+// Standard LL(k) Parsing Table First Index
 var PTFirstIn = function(type, value) {
   this.type = type;
   this.value = value;
@@ -798,11 +841,13 @@ PTFirstIn.prototype.toFlat = function() {
   return flat;
 };
 
+// Standard LL(k) Parsing Table Second Index Type
 PTSIType = {
   STR : 1, // terminals
   END : 2  // end of input
 };
 
+// Standard LL(k) Parsing Table Second Index
 var PTSecondIn = function(type, str) {
   this.type = type;
   this.str = str;
@@ -822,6 +867,7 @@ PTSecondIn.prototype.toFlat = function() {
   return flat;
 };
 
+// Standard LL(k) Parsing Table
 var ParsingTable = function() {
   this.fi = [];  // first index
   this.fif = [];   // only values
@@ -899,6 +945,7 @@ ParsingTable.prototype.convUToSiFlat = function(u) {
   return flat;
 };
 
+// Standard LL(k) Parsing Table Generator
 var TableGenerator = {
   
   IG: undefined,
@@ -1132,7 +1179,7 @@ var TableGenerator = {
     var fiv, siv, el; 
     var PT = this.PT;
     
-    //(1)
+    //(1) expand
     var tabi, rowj, gelk, nontl, gelnew;
     for (var i = 0; i < this.LLks.length; i++) {
       tabi = this.LLks[i];
@@ -1163,7 +1210,7 @@ var TableGenerator = {
       }
     }
     
-    //(2)
+    //(2) pop
     var sii;
     for (var i = 0; i < PT.si.length; i++) {
       sii = PT.si[i];
@@ -1175,7 +1222,7 @@ var TableGenerator = {
       PT.addEl(fiv, siv, el);
     }
     
-    //(3)
+    //(3) accept
     var fie, sie;
     el = new PTEl(PTEType.ACCEPT);
     fie = new PTFirstIn(PTFIType.BOT);
