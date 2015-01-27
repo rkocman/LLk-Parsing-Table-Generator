@@ -181,29 +181,31 @@ var PTG = {
     this.setInfo("Processing...");
     out.clean();
     
-    // force redraw
-    //this.statusBar.hide().show(0);
-    
     if (!this.handleInputForm()) return;
     
-    if (!this.handleInputParse()) return;
+    // force redraw
+    setTimeout(this.runAsync, 30);
+  },
+  
+  runAsync: function() {
+    if (!PTG.handleInputParse()) return;
     out.title("Parsed Rules");
     out.grammar(ParserHandler.IG);
-    if (!this.handleInputSemanticErrors()) return;
+    if (!PTG.handleInputSemanticErrors()) return;
     
-    TableGenerator.construct(ParserHandler.IG, this.k);
-    if (this.config === PTGConfig.FULL) {
-      out.title("LL("+this.k+") Tables");
+    TableGenerator.construct(ParserHandler.IG, PTG.k);
+    if (PTG.config === PTGConfig.FULL) {
+      out.title("LL("+PTG.k+") Tables");
       for (var i = 0; i < TableGenerator.LLks.length; i++) {
         out.llkT(TableGenerator.LLks[i]);
       }
       
-      out.title("Standard LL("+this.k+") Parsing Table");
+      out.title("Standard LL("+PTG.k+") Parsing Table");
       out.sLLkPT(TableGenerator.PT);
     }
     
-    this.setOk("OK");
-    this.handleParsingTableErrors();
+    PTG.setOk("OK");
+    PTG.handleParsingTableErrors();
   },
   
   handleInputForm: function() {
