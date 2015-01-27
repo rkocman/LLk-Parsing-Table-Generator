@@ -169,9 +169,9 @@ var PTGConfig = {
 var PTG = {
 
   // form content
-  inputG : undefined,
-  k : undefined,
-  config : undefined,
+  inputG: undefined,
+  k: undefined,
+  config: undefined,
 
   statusBar: undefined,
 
@@ -201,6 +201,10 @@ var PTG = {
       out.title("Standard LL("+PTG.k+") Parsing Table");
       out.sLLkPT(TableGenerator.PT);
     }
+    
+    ExtendedTableGenerator.construct(ParserHandler.IG, PTG.k, TableGenerator.PT);
+    out.title("Extended LL("+PTG.k+") Parsing Table");
+    out.eLLkPT(ExtendedTableGenerator.EPT);
     
     PTG.setOk("OK");
     PTG.handleParsingTableErrors();
@@ -318,19 +322,19 @@ var PHStatus = {
 // Parser Handler
 var ParserHandler = {
   
-  IG : undefined,
-  status : PHStatus.OK,
-  statusText : "",
-  halves : undefined,
+  IG: undefined,
+  status: PHStatus.OK,
+  statusText: "",
+  halves: undefined,
   
-  start : function() {
+  start: function() {
     this.IG = new Grammar();
     this.status = PHStatus.OK;
     this.statusText = "";
     this.halves = [];
   },
   
-  setT : function(array) {
+  setT: function(array) {
     var geli;
     for (var i = 0; i < array.length; i++) {
       geli = array[i];
@@ -340,7 +344,7 @@ var ParserHandler = {
     }
   },
   
-  convert : function(gel) {
+  convert: function(gel) {
     if (gel.type === GType.V) {
       gel.type = GType.T;
       return gel;
@@ -355,7 +359,7 @@ var ParserHandler = {
     return gel;
   },
   
-  setHalfR : function(right) {
+  setHalfR: function(right) {
     var grule = new GRule();
     for (var i = 0; i < right.length; i++) {
       var gel = this.convert(right[i]);
@@ -364,7 +368,7 @@ var ParserHandler = {
     this.halves.push(grule);
   },
   
-  setR : function(left, right) {
+  setR: function(left, right) {
     var lgel = this.convert(left);
     
     // test nonterminal on the left side
@@ -391,7 +395,7 @@ var ParserHandler = {
     this.halves = [];
   },
   
-  finish : function() {
+  finish: function() {
     if (this.status !== PHStatus.OK) return;
     
     // test duplicate rules
@@ -407,7 +411,7 @@ var ParserHandler = {
     this.IG.parseR();
   },
   
-  testDuplicate : function() {
+  testDuplicate: function() {
     var grulei, grulej, same;
     for (var i = 0; i < this.IG.R.length; i++) {
       grulei = this.IG.R[i];
@@ -433,7 +437,7 @@ var ParserHandler = {
     return true;
   },
   
-  testMissing : function() {
+  testMissing: function() {
     var grulei, gelj, found;
     var onleft = [];
     var onright = [];
@@ -469,7 +473,7 @@ var ParserHandler = {
     return true;
   },
   
-  prepareEmptySet : function() {
+  prepareEmptySet: function() {
     var grulei, gelj;
     var olds = [];
     var news = [];
@@ -510,7 +514,7 @@ var ParserHandler = {
     return news;
   },
   
-  testLeftRecursion : function() {
+  testLeftRecursion: function() {
     var grulei, gelj;
     var empty = this.prepareEmptySet();
     
@@ -529,7 +533,7 @@ var ParserHandler = {
     }
   },
   
-  testLeftRecusion_cont : function(before, current, empty) {
+  testLeftRecusion_cont: function(before, current, empty) {
     var grulei, gelj;
     
     if (inArray(current, before)) {
@@ -721,6 +725,14 @@ var out = {
     }
     html += "</td>";
     return html;
+  },
+  
+  eLLkPT: function(ept) {
+    
+  },
+  
+  prepECell: function(array) {
+    
   }
   
 };
@@ -948,7 +960,7 @@ ParsingTable.prototype.convUToSiFlat = function(u) {
 var TableGenerator = {
   
   IG: undefined,
-  k : undefined,
+  k: undefined,
   
   Tcounter: 0,
   
@@ -956,7 +968,7 @@ var TableGenerator = {
   LLksf: [],
   PT: undefined,
   
-  status : TGStatus.OK,
+  status: TGStatus.OK,
   
   construct: function(IG, k) {
     this.IG = IG;
@@ -1189,7 +1201,7 @@ var TableGenerator = {
         el.rule = rowj.prod;
         el.str = [];
         
-        // convert right side of the rule
+        // convert the right side of a rule
         nontl = 0;
         for (var k = 0; k < rowj.prod.right.length; k++) {
           gelk = rowj.prod.right[k];
@@ -1244,6 +1256,93 @@ var TableGenerator = {
           this.status = TGStatus.ERROR;
       }
     }
+  }
+  
+};
+
+
+////
+// EXTENDED LL(k) PARSING TABLE GENERATOR
+//////
+
+// Extended LL(k) Parsing Table Element Type
+var EPTEType = {
+  ACCEPT : 0,
+  POP : 1,
+  EXPAND : 2,
+  CHANGE : 3
+};
+
+// Extended LL(k) Parsing Table Element
+var EPTEl = function(type, str, rule) {
+  this.type = type;
+  this.str = str;
+  this.rule = rule;
+};
+
+// Extended LL(k) Parsing Table First Index Type
+var EPTFIType = {
+  N    : 1, // nonterminal
+  PT   : 2, // pushdown terminal
+  PBOT : 3, // bottom of pushdown
+  IT   : 4, // input terminal
+  IEND : 5  // end of input
+};
+
+// Extended LL(k) Parsing Table First Index
+var EPTFirstIn = function(type, value) {
+  this.type = type;
+  this.value = value;
+};
+EPTFirstIn.prototype.toFlat = function() {
+  var flat;
+  switch(this.type) {
+    case EPTFIType.N: flat = this.value; break;
+    case EPTFIType.PT: flat = ":"+this.value; break;
+    case EPTFIType.PBOT: flat = ":#"; break;
+    case EPTFIType.IT: flat = "|"+this.value; break;
+    case EPTFIType.IEND: flat = "|$"; break;
+  }
+  return flat;
+};
+
+// Extended LL(k) Parsing Table Second Index
+var EPTSecondIn = function(str) {
+  this.str = str;
+};
+EPTSecondIn.prototype.toFlat = function() {
+  var flat = "";
+  for (var i = 0; i < this.str.length; i++) {
+    flat += this.str[i].value;
+    if (i !== this.str.length-1)
+      flat += ":";
+  }
+  return flat;
+};
+
+// Extended LL(k) Parsing Table
+var ExtendedParsingTable = function() {
+  this.fi = [];  // first index
+  this.fif = [];   // only values
+  this.si = [];  // second index
+  this.sif = [];   // only values
+  
+  this.field = [];
+};
+
+// Extended LL(k) Parsing Table Generator
+var ExtendedTableGenerator = {
+  
+  IG: undefined,
+  k: undefined,
+  PT: undefined,
+  
+  EPT: undefined,
+  
+  construct: function(IG, k, PT) {
+    this.IG = IG;
+    this.k = k;
+    this.PT = PT;
   }
   
 };
