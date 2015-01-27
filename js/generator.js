@@ -116,18 +116,16 @@ var Grammar = function() {
   this.T = [];        // terminals
   this.Tf = [];         // only values
   this.R = [];        // rules  
+  this.Rcount = 0;    // number of rules
   this.S = undefined; // starting nonterminal
 };
 Grammar.prototype.addT = function(gel) {
   addToArrayFlat(gel, gel.value, this.T, this.Tf);
 };
 Grammar.prototype.addR = function(grule) {
+  this.Rcount++;
+  grule.number = this.Rcount;
   this.R.push(grule);
-};
-Grammar.prototype.fillRuleNumbers = function() {
-  for (var i = 0; i < this.R.length; i++) {
-    this.R[i].number = i+1;
-  }
 };
 Grammar.prototype.parseR = function() {
   // set S
@@ -393,8 +391,7 @@ var ParserHandler = {
     this.halves = [];
   },
   
-  finish : function() { 
-    this.IG.fillRuleNumbers();
+  finish : function() {
     if (this.status !== PHStatus.OK) return;
     
     // test duplicate rules
