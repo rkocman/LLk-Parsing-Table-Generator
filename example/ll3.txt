@@ -1,0 +1,8 @@
+%token a
+%% /* LL(3) */
+S : a a 
+  | A a a a
+  ;
+
+A : /*eps*/
+  ;

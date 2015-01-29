@@ -31,6 +31,9 @@ html {
 .t {
   color: #ff851b;
 }
+.state {
+  color: #39adad;
+}
 .lbl {
   color: #85144b;
 }
@@ -223,4 +226,47 @@ sub {
 }
 #output .spt th:last-child {
   border: 0;
+}
+
+#output .ept {
+  float: left;
+  margin: 10px 20px 5px 0;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+#output .ept th, 
+#output .ept td {
+  font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
+  border: 1px solid #555555;
+  vertical-align: middle;
+  text-align: center;
+}
+#output .ept th {
+  font-size: 100%;
+  padding: 4px 15px;
+  border-color: #999999;
+}
+#output .ept td {
+  font-size: 115%;
+  padding: 2px 10px;
+}
+#output .ept tr:first-child th {
+  border-top: 0;
+  border-bottom-color: #555555; 
+}
+#output .ept th:first-child {
+  border-left: 0;
+  border-right-color: #555555;
+  line-height: 1.6;
+}
+#output .ept tr:first-child th:first-child {
+  border-right-color: #999999;
+  border-bottom-color: #999999;
+}
+#output .ept th:last-child {
+  border: 0;
+}
+#output .ept .sep th,
+#output .ept .sep td {
+  border-bottom-width: 2px;
 }

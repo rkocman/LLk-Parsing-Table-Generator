@@ -579,7 +579,7 @@ var out = {
   
   title: function(text) {
     var html = "<h2>"+text+"</h2>";
-    this.out.html(this.out.html() + html);
+    this.out.append(html);
   },
   
   grammar: function(g) {
@@ -589,7 +589,7 @@ var out = {
       html += "<td>"+this.prepRule(g.R[i])+"</td></tr>";
     }
     html += "</table>";
-    this.out.html(this.out.html() + html);
+    this.out.append(html);
   },
   
   prepRule: function(grule) {
@@ -617,6 +617,19 @@ var out = {
       "<span class=\""+((gel.isN())?"n":"t")+"\">"
       +gel.value+"</span>"+((nospace)? "" : " ");
     return html; 
+  },
+  
+  prepElStateStr: function(array) {
+    var html = "<span class=\"state\">";
+    if (array.length === 0)
+      html += "0";
+    for (var i = 0; i < array.length; i++) {
+      html += array[i].value;
+      if (i !== array.length-1)
+        html += ":";
+    }
+    html += "</span>";
+    return html;
   },
   
   llkT: function(t) {
@@ -650,7 +663,7 @@ var out = {
       html += "</td></tr>";
     }
     html += "</table>";
-    this.out.html(this.out.html() + html);
+    this.out.append(html);
   },
   
   prepFollow: function(f) {
@@ -699,7 +712,7 @@ var out = {
       html += "</tr>";
     }
     html += "</table>";
-    this.out.html(this.out.html() + html);
+    this.out.append(html);
   },
   
   prepSCell: function(array) {
@@ -728,11 +741,74 @@ var out = {
   },
   
   eLLkPT: function(ept) {
-    
+    var html = "<table class=\"ept\">";
+    html += "<tr><th></th>";
+    for (var i = 0; i < ept.si.length; i++) {
+      html += "<th>";
+      html += this.prepElStateStr(ept.si[i].str);
+      html += "</th>";
+    }
+    html += "<th> </th>";
+    html += "</tr>";
+    for (var i = 0; i < ept.fi.length; i++) {
+      if (ept.fi[i].type === EPTFIType.PBOT)
+        html += "<tr class=\"sep\">";
+      else
+        html += "<tr>";
+      html += "<th>";
+      switch(ept.fi[i].type) {
+        case EPTFIType.N:
+          html += ept.fi[i].value;
+          break;
+        case EPTFIType.PT:
+        case EPTFIType.IT:
+          html += "<span class=\"t\">"+ept.fi[i].value+"</span>";
+          break;
+        case EPTFIType.PBOT:
+          html += "<span class=\"bot\">#</span>";
+          break;
+        case EPTFIType.IEND:
+          html += "<span class=\"eps\">$</span>";
+          break;
+      }
+      html += "</th>";
+      for (var j = 0; j < ept.si.length; j++) {
+        html += this.prepECell(ept.field[i][j]);
+      }
+      html += "<th> </th>";
+      html += "</tr>";
+    }
+    html += "</table>";
+    this.out.append(html);
   },
   
   prepECell: function(array) {
-    
+    var html = "";
+    if (array.length > 1)
+      html += "<td class=\"errorCell\">";
+    else
+      html += "<td>";
+    for (var i = 0; i < array.length; i++) {
+      switch(array[i].type) {
+        case EPTEType.ACCEPT:
+          html += "<span class=\"accept\">accept</span>";
+          break;
+        case EPTEType.EXPAND:
+          html += this.prepElStr(array[i].str)+", ";
+          html += "<span class=\"lbl\">"+array[i].rule.number+"</span>";
+          break;
+        case EPTEType.POP: 
+          html += "<span class=\"pop\">pop</span> ";
+          html += this.prepElStateStr(array[i].str);
+          break;
+        case EPTEType.CHANGE:
+          html += this.prepElStateStr(array[i].str);
+          break;
+      }
+      html += "<br>";
+    }
+    html += "</td>";
+    return html;
   }
   
 };
@@ -917,7 +993,7 @@ ParsingTable.prototype.init = function(T, Tcounter, k) {
         nsi.str.push(T[ins[ki]]);
     }
     ins[k-1]++;
-    for (var ki = k-1; ki >=0 ; ki--) {
+    for (var ki = k-1; ki >= 0; ki--) {
       if (ins[ki] > T.length) {
         ins[ki-1]++;
         ins[ki] = 0;
@@ -1329,6 +1405,89 @@ var ExtendedParsingTable = function() {
   
   this.field = [];
 };
+ExtendedParsingTable.prototype.init = function(T, PT, k) {
+  // first index
+  var nfi, ptfi;
+  for (var i = 0; i < PT.fi.length; i++) {
+    ptfi = PT.fi[i];
+    switch(ptfi.type) {
+      case PTFIType.N:
+        nfi = new EPTFirstIn(EPTFIType.N, ptfi.value); break;
+      case PTFIType.T:
+        nfi = new EPTFirstIn(EPTFIType.PT, ptfi.value); break;
+      case PTFIType.BOT:
+        nfi = new EPTFirstIn(EPTFIType.PBOT); break;
+    }
+    this.fi.push(nfi);
+    this.fif.push(nfi.toFlat());
+  }
+  for (var i = 0; i < T.length; i++) {
+    nfi = new EPTFirstIn(EPTFIType.IT, T[i].value);
+    this.fi.push(nfi);
+    this.fif.push(nfi.toFlat());
+  }
+  nfi = new EPTFirstIn(EPTFIType.IEND);
+  this.fi.push(nfi);
+  this.fif.push(nfi.toFlat());
+  
+  // second index
+  var nsi, ptsi;
+  var nend = new GElement("$", GType.T);
+  nsi = new EPTSecondIn([]);
+  this.si.push(nsi);
+  this.sif.push(nsi.toFlat());
+  for (var kless = 1; kless < k; kless++) {
+    var ins = [];
+    for (var ki = 0; ki < kless; ki++) {
+      ins[ki] = 0;
+    }
+    while (ins[0] < T.length) {
+      nsi = new EPTSecondIn([]);
+      for (var ki = 0; ki < kless; ki++) {
+        nsi.str.push(T[ins[ki]]);
+      }
+      ins[kless-1]++;
+      for (var ki = kless-1; ki >= 1; ki--) {
+        if (ins[ki] >= T.length) {
+          ins[ki-1]++;
+          ins[ki] = 0;
+        }
+      }
+      this.si.push(nsi);
+      this.sif.push(nsi.toFlat());
+    }
+  }
+  for (var i = 0; i < PT.si.length; i++) {
+    ptsi = PT.si[i];
+    nsi = new EPTSecondIn([]);
+    switch(ptsi.type) {
+      case PTSIType.STR:
+        for (var j = 0; j < k; j++) {
+          if (j < ptsi.str.length) {
+            nsi.str.push(ptsi.str[j]);
+          } else {
+            nsi.str.push(nend);
+          }
+        }
+        break;
+      case PTSIType.END:
+        for (var j = 0; j < k; j++) {
+          nsi.str.push(nend);
+        }
+        break;
+    }
+    this.si.push(nsi);
+    this.sif.push(nsi.toFlat());
+  }
+  
+  // fields
+  for (var i = 0; i < this.fi.length; i++) {
+    this.field[i] = [];
+    for (var j = 0; j < this.si.length; j++) {
+      this.field[i][j] = [];
+    }
+  }
+};
 
 // Extended LL(k) Parsing Table Generator
 var ExtendedTableGenerator = {
@@ -1343,6 +1502,128 @@ var ExtendedTableGenerator = {
     this.IG = IG;
     this.k = k;
     this.PT = PT;
+    this.EPT = new ExtendedParsingTable();
+    this.EPT.init(IG.T, PT, k);
+    
+    this.fillAccept();
+    this.copyExpands();
+    this.convertPops();
+    this.addStateChanges();
+  },
+  
+  convertFirstIndex: function(oldfi) {
+    switch(oldfi.type) {
+      case PTFIType.N:
+        return new EPTFirstIn(EPTFIType.N, oldfi.value);
+      case PTFIType.T:
+        return new EPTFirstIn(EPTFIType.PT, oldfi.value);
+      case PTFIType.BOT:
+        return new EPTFirstIn(EPTFIType.PBOT);
+    }
+  },
+  
+  convertSecondIndex: function(oldsi) {
+    var nsi = new EPTSecondIn([]);
+    var nend = new GElement("$", GType.T);
+    switch(oldsi.type) {
+      case PTSIType.STR:
+        for (var i = 0; i < this.k; i++) {
+          if (i < oldsi.str.length) {
+            nsi.str.push(oldsi.str[i]);
+          } else {
+            nsi.str.push(nend);
+          }
+        }
+        return nsi;
+      case PTSIType.END:
+        for (var i = 0; i < this.k; i++) {
+          nsi.str.push(nend);
+        }
+        return nsi;
+    }
+  },
+  
+  pushConverted: function(oldfi, oldsi, el) {
+    var fi = this.convertFirstIndex(oldfi);
+    var si = this.convertSecondIndex(oldsi);
+    var i = indexOf(fi.toFlat(), this.EPT.fif);
+    var j = indexOf(si.toFlat(), this.EPT.sif);
+    this.EPT.field[i][j].push(el);
+  },
+  
+  fillAccept: function() {
+    var bot = new PTFirstIn(PTFIType.BOT);
+    var end = new PTSecondIn(PTSIType.END);
+    var accept = new EPTEl(EPTEType.ACCEPT);
+    this.pushConverted(bot, end, accept);
+  },
+  
+  copyExpands: function() {
+    var cell, oldel, nel;
+    for (var i = 0; i < this.PT.fi.length; i++) {
+      for (var j = 0; j < this.PT.si.length; j++) {
+        cell = this.PT.field[i][j];
+        for (var l = 0; l < cell.length; l++) {
+          oldel = cell[l];
+          if (oldel.type === PTEType.EXPAND) {
+            nel = new EPTEl(EPTEType.EXPAND, oldel.str, oldel.rule);
+            this.pushConverted(this.PT.fi[i], this.PT.si[j], nel);
+          }
+        }
+      }
+    }
+  },
+  
+  convertPops: function() {
+    var cell, oldel, nel, nstate;
+    var nend = new GElement("$", GType.T);
+    for (var i = 0; i < this.PT.fi.length; i++) {
+      for (var j = 0; j < this.PT.si.length; j++) {
+        cell = this.PT.field[i][j];
+        for (var l = 0; l < cell.length; l++) {
+          oldel = cell[l];
+          if (oldel.type === PTEType.POP) {
+            nstate = this.convertSecondIndex(this.PT.si[j]);
+            nstate.str.splice(0, 1);
+            if (this.PT.si[j].str.length < this.k)
+              nstate.str.push(nend);
+            nel = new EPTEl(EPTEType.POP, nstate.str);
+            this.pushConverted(this.PT.fi[i], this.PT.si[j], nel);
+          }
+        }
+      }
+    }
+  },
+  
+  addStateChanges: function() {
+    var nel, nstr, csi;
+    var nend = new GElement("$", GType.T);
+    for (var i = 0; i < this.EPT.fi.length; i++) {
+      // only relevant
+      if (this.EPT.fi[i].type !== EPTFIType.IT && 
+          this.EPT.fi[i].type !== EPTFIType.IEND) 
+        continue;
+      for (var j = 0; j < this.EPT.si.length; j++) {
+        // only relevant
+        if (this.EPT.si[j].str.length >= this.k)
+          continue;
+        
+        nstr = [];
+        for (var l = 0; l < this.EPT.si[j].str.length; l++) {
+          nstr.push(this.EPT.si[j].str[l]);
+        }
+        if (this.EPT.fi[i].type === EPTFIType.IT) {
+          nstr.push(new GElement(this.EPT.fi[i].value, GType.T));
+        }
+        if (this.EPT.fi[i].type === EPTFIType.IEND) {
+          while (nstr.length < this.k) {
+            nstr.push(nend);
+          }
+        }
+        nel = new EPTEl(EPTEType.CHANGE, nstr);
+        this.EPT.field[i][j].push(nel);
+      }
+    }
   }
   
 };
