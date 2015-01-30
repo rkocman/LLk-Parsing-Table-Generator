@@ -12,7 +12,7 @@
 "//".*                      /* skip single-line comment */
 "/*"(.|\n|\r)*?"*/"         /* skip multi-line comment */
 "%token"                    return 'TOKENDEF'
-"%%"                        return 'BEGIN'
+"%%"                        return 'SEP'
 ":"                         return ':'
 "|"                         return '|'
 ";"                         return ';'
@@ -34,23 +34,24 @@ token
     : ATOKEN { $$ = [new GElement(yytext, GType.A)]; }
     | VTOKEN { $$ = [new GElement(yytext, GType.V)]; }
     ;
-    
+
 head
-    : headdef head { ParserHandler.setT($1.concat($2)); }
-    | /* eps */ { $$ = []; }
+    : headdef SEP { ParserHandler.setT($1); }
+    | /* eps */
     ;
 
 headdef
     : TOKENDEF token headdef2 { $$ = $2.concat($3); }
     ;
-
+    
 headdef2
     : token headdef2 { $$ = $1.concat($2); }
+    | headdef { $$ = $1; }
     | /* eps */ { $$ = []; }
     ;
 
 body
-    : BEGIN rule body2
+    : rule body2
     ;
 
 body2

@@ -1,4 +1,4 @@
-%token EOF ATOKEN VTOKEN TOKENDEF BEGIN
+%token EOF ATOKEN VTOKEN TOKENDEF SEP
 %% /* LL(1) */
 start 
     : head body EOF
@@ -10,21 +10,22 @@ token
     ;
     
 head
-    : headdef head 
-    | /* eps */ 
+    : headdef SEP
+    | /* eps */
     ;
 
 headdef
-    : TOKENDEF token headdef2 
+    : TOKENDEF token headdef2
     ;
-
+    
 headdef2
-    : token headdef2 
-    | /* eps */ 
+    : token headdef2
+    | headdef
+    | /* eps */
     ;
 
 body
-    : BEGIN rule body2
+    : rule body2
     ;
 
 body2
@@ -33,11 +34,11 @@ body2
     ;
 
 rule
-    : token ':' rule2 ';' 
+    : token ':' rule2 ';'
     ;
 
 rule2
-    : token rule2 
-    | '|' rule2 
-    | /* eps */ 
+    : token rule2
+    | '|' rule2
+    | /* eps */
     ;
