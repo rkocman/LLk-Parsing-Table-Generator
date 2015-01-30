@@ -35,27 +35,59 @@
         <textarea name="grammar" placeholder="/* Insert your grammar */"></textarea>
       </div>
       <div class="right">
-        <h2>Example Grammar:</h2>
-        <p class="code">
-          <span ondblclick="selectContent(this)"
-          >%token a b<br>
-          %% /* LL(2) */<br>
-          S : a A a a<br>
-          &nbsp; | b A b a ;<br>
-          A : /*eps*/<br>
-          &nbsp; | b ;</span>
-          <br><br>
-        </p>
-        <h2>Configuration:</h2>
-        <div class="config">
-          <strong>k</strong> (>= 1)<strong>:</strong>&nbsp; <input name="k" type="number" value="2"><br>
-          <strong>output:</strong>&nbsp;
-          <select name="result">
-            <option value="full">whole process</option>
-            <option value="compact">parsing table</option>
-            <option value="export">export only</option>
-          </select><br>
-          <input type="submit" value="Generate parsing table">
+        <div class="control">
+          <h2>Example Grammar:</h2>
+          <p class="code">
+            <span ondblclick="selectContent(this)"
+            >%token a b<br>
+            %% /* LL(2) */<br>
+            S : a A a a<br>
+            &nbsp; | b A b a ;<br>
+            A : /*eps*/<br>
+            &nbsp; | b ;</span>
+            <br><br>
+          </p>
+          <h2>Configuration:</h2>
+          <div class="config">
+            <strong>k</strong> (>= 1)<strong>:</strong>&nbsp; <input name="k" type="number" value="2"><br>
+            <strong>output:</strong>&nbsp;
+            <select name="result">
+              <option value="full">whole process</option>
+              <option value="compact">parsing table</option>
+              <option value="export">export only</option>
+            </select><br>
+            <input type="submit" value="Generate parsing table">
+          </div>
+        </div>
+        <div class="hints">
+          <h2>Hints:</h2>
+          <div class="content">
+            This tool uses simplified 
+            <a href="http://dinosaur.compilertools.net/yacc/">yacc-like syntax</a> 
+            for its input:
+            <ul>
+              <li>rules - can be defined as in yacc but without actions</li>
+              <li>nonterminals - defined in the form <span>[a-Z][a-Z0-9]*</span></li>
+              <li>abstract terminals - same as nonterminals but declared<br>
+                by <span>%token</span> at the beginning</li>
+              <li>literal terminals - anything inside quotes or apostrophes<br>
+                (escape sequences are not supported)</li>
+              <li>comments - C-like single-line <span>//</span> 
+                and multi-line <span>/**/</span></li>
+            </ul>
+
+            <strong>Export <em>(not supported for IE)</em>:</strong>
+            <ul>
+              <li>XLS - standard Excel file <em>(best option)</em></li>
+              <li>CSV1 - CSV format comma-separated</li>
+              <li>CSV2 - CSV format semicolon-separated</li>
+            </ul>
+
+            <strong>Performance tips:</strong>
+            <ul>
+              <li>try less verbose ouput for faster results</li>
+            </ul>
+          </div>
         </div>
       </div>
     </form>

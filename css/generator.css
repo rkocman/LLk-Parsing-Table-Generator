@@ -81,17 +81,27 @@ sub {
 }
 #head p {
   font-size: 70%;
-  color: #333333;
 }
 
 #input {
   clear: both;
-  padding-top: 10px;
 }
-#input .left,
-#input .right {
+#input .left {
   float: left;
   margin-right: 30px;
+  padding-top: 1px;
+}
+#input .right {
+  float: left;
+  width: 640px;
+  padding-top: 1px;
+}
+#input .control {
+  float: left;
+  margin-right: 30px;
+}
+#input .hints {
+  float: left;
 }
 #input h2 {
   font-size: 100%;
@@ -116,6 +126,33 @@ sub {
   margin-top: 5px;
   width: 170px;
   height: 50px;
+}
+#input .control {
+  width: 180px;
+}
+#input .hints {
+  width: 430px;
+}
+#input .hints .content {
+  font-size: 90%;
+  line-height: 1.33;
+}
+#input .hints ul {
+  margin-top: 1px;
+  padding-left: 16px;
+}
+#input .hints li {
+  list-style: square;
+}
+#input .hints span {
+  font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
+  font-size: 97%;
+}
+#input .hints em {
+  font-weight: normal;
+}
+#input .hints ul:last-child {
+  margin-bottom: 0;
 }
 
 #status {
