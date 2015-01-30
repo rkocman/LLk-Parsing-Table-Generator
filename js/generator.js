@@ -162,7 +162,8 @@ var PTGStatus = {
 // LL(k) Parsing Table Generator GUI Configuration
 var PTGConfig = {
   FULL    : "full",
-  COMPACT : "compact"
+  COMPACT : "compact",
+  EXPORT  : "export"
 };
 
 // LL(k) Parsing Table Generator GUI
@@ -199,12 +200,18 @@ var PTG = {
       }
       
       out.title("Standard LL("+PTG.k+") Parsing Table");
+      out.export("spt", "Standard LL("+PTG.k+") Parsing Table");
       out.sLLkPT(TableGenerator.PT);
     }
     
     ExtendedTableGenerator.construct(ParserHandler.IG, PTG.k, TableGenerator.PT);
     out.title("Extended LL("+PTG.k+") Parsing Table");
-    out.eLLkPT(ExtendedTableGenerator.EPT);
+    out.export("ept", "Extended LL("+PTG.k+") Parsing Table");
+    if (PTG.config === PTGConfig.EXPORT) {
+      out.eLLkPT(ExtendedTableGenerator.EPT, true);
+    } else {
+      out.eLLkPT(ExtendedTableGenerator.EPT);
+    }
     
     PTG.setOk("OK");
     PTG.handleParsingTableErrors();
@@ -218,7 +225,9 @@ var PTG = {
     }
     
     this.config = $("select[name=result]").val();
-    if (this.config !== PTGConfig.FULL && this.config !== PTGConfig.COMPACT) {
+    if (this.config !== PTGConfig.FULL && 
+        this.config !== PTGConfig.COMPACT &&
+        this.config !== PTGConfig.EXPORT) {
       this.setError("Error: Invalid output selection");
       return false;
     }
@@ -678,7 +687,7 @@ var out = {
   },
   
   sLLkPT: function(spt) {
-    var html = "<table class=\"spt\">";
+    var html = "<table id=\"spt\" class=\"spt\">";
     html += "<tr><th></th>";
     for (var i = 0; i < spt.si.length; i++) {
       if (spt.si[i].type === PTSIType.STR) {
@@ -740,8 +749,11 @@ var out = {
     return html;
   },
   
-  eLLkPT: function(ept) {
-    var html = "<table class=\"ept\">";
+  eLLkPT: function(ept, invis) {
+    var html = "<table id=\"ept\" class=\"ept\"";
+    if (invis)
+      html += " style=\"display:none\"";
+    html += ">";
     html += "<tr><th></th>";
     for (var i = 0; i < ept.si.length; i++) {
       html += "<th>";
@@ -809,6 +821,22 @@ var out = {
     }
     html += "</td>";
     return html;
+  },
+  
+  export: function(table, name) {
+    var html = "<p class=\"export\">";
+    html += "Export: ";
+    html += "<a download=\""+table+".xls\" href=\"#\" "
+      +"onclick=\"return ExcellentExport.excel(this, '"+table+"', '"+name+"');\">"
+      +"XLS</a>, ";
+    html += "<a download=\""+table+".csv\" href=\"#\" "
+      +"onclick=\"return ExcellentExport.csv(this, '"+table+"');\">"
+      +"CSV1</a>, ";
+    html += "<a download=\""+table+".csv\" href=\"#\" "
+      +"onclick=\"return ExcellentExport.csv(this, '"+table+"', ';');\">"
+      +"CSV2</a>";
+    html += "</p>";
+    this.out.append(html);
   }
   
 };
