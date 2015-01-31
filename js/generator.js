@@ -132,6 +132,8 @@ Grammar.prototype.parseR = function() {
   this.S = this.R[0].left;
   
   // fill N and T
+  this.T = [];
+  this.Tf = [];
   var grulei, gelj;
   for (var i = 0; i < this.R.length; i++) {
     grulei = this.R[i];
