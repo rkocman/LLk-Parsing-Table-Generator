@@ -134,8 +134,8 @@ sub {
   width: 430px;
 }
 #input .hints .content {
-  font-size: 90%;
-  line-height: 1.33;
+  font-size: 86%;
+  line-height: 1.4;
 }
 #input .hints ul {
   margin-top: 1px;
