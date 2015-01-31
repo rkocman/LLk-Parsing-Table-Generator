@@ -37,6 +37,7 @@ token
 
 head
     : headdef SEP { ParserHandler.setT($1); }
+    | SEP
     | /* eps */
     ;
 

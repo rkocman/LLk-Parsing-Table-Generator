@@ -11,6 +11,7 @@ token
     
 head
     : headdef SEP
+    | SEP
     | /* eps */
     ;
 
