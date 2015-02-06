@@ -16,7 +16,7 @@
 ":"                         return ':'
 "|"                         return '|'
 ";"                         return ';'
-[a-zA-Z][a-zA-Z0-9]*        return 'ATOKEN'
+[_a-zA-Z][_a-zA-Z0-9]*      return 'ATOKEN'
 "'".+?"'"|"\"".+?"\""       return 'VTOKEN'
 <<EOF>>                     return 'EOF'
 
