@@ -5,14 +5,16 @@
   
   <title>LL(k) Parsing Table Generator</title>
   <meta name="description" content="LL(k) Parsing Table Generator for Automaton with One-Symbol Reading Head">
-  <meta name="author" content="Radim Kocman, https://github.com/Gals42/LLk-Parsing-Table-Generator" />
+  <meta name="author" content="Radim Kocman and Dušan Kolář, https://github.com/Gals42/LLk-Parsing-Table-Generator" />
+  
+  <script src="js/libs/lodash.min.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/generator-core.js"></script>
   
   <script src="js/libs/jquery-2.1.3.js"></script>
   <script src="js/libs/excellentexport.js"></script>
-  
-  <link rel="stylesheet" type="text/css" href="css/generator.css" />
-  <script src="js/parser.js"></script>
-  <script src="js/generator.js"></script>
+  <link rel="stylesheet" type="text/css" href="css/generator-gui.css" />
+  <script src="js/generator-gui.js"></script>
 </head>
 <body>
   
@@ -21,7 +23,7 @@
     <div id="head">
       <h1>LL(k) Parsing Table Generator</h1>
       <h2>for Automaton with One-Symbol Reading Head</h2>
-      <h3>Author: Radim Kocman, <a href="https://github.com/Gals42/LLk-Parsing-Table-Generator">GitHub</a></h3>
+      <h3>Authors: Radim Kocman and Dušan Kolář, <a href="https://github.com/Gals42/LLk-Parsing-Table-Generator">GitHub</a></h3>
       <p>
         <strong>Based on:</strong><br>
         Kolář, D.: Simulation of LLk Parsers with Wide Context by Automaton with One-Symbol Reading Head.<br>
@@ -86,7 +88,7 @@
 
             <strong>Performance tips:</strong>
             <ul>
-              <li>try less verbose ouput for faster results</li>
+              <li>try a less verbose ouput for faster results</li>
             </ul>
           </div>
         </div>

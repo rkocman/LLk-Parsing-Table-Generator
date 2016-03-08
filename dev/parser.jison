@@ -1,7 +1,7 @@
 /*!
  * Input Parser for LL(k) Parsing Table Generator
  * https://github.com/Gals42/LLk-Parsing-Table-Generator
- * Author: Radim Kocman
+ * Authors: Radim Kocman and Dušan Kolář
  */
 
 /* Lexemes */
