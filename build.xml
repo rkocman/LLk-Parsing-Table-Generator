@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+LL(k) Parsing Table Generator
+https://github.com/Gals42/LLk-Parsing-Table-Generator
+Authors: Radim Kocman and Dušan Kolář
+-->
+<project name="LL(k)_Parsing_Table_Generator" default="default" basedir=".">
+    <description>Builds, tests, and runs the project LL(k) Parsing Table Generator.</description>
+    <import file="nbproject/build-impl.xml"/>
+    
+    <!-- Handles the post-jar and exports the web GUI -->
+    <target name="-post-jar">
+        <!-- Delete README.txt -->
+        <delete file="${dist.dir}/README.TXT"/>
+        
+        <!-- Merge libs into the main jar -->
+        <property name="dist.finaljar" value="${dist.dir}/llkptg.jar"/>
+        <jar jarfile="${dist.finaljar}" filesetmanifest="skip">
+          <zipfileset src="${dist.jar}"/>
+          <zipfileset src="${dist.dir}/lib/args4j-2.33.jar" excludes="LICENSE,META-INF/**"/>
+          <zipfileset src="${dist.dir}/lib/commons-csv-1.2.jar" excludes="META-INF/**"/>
+          <!-- <zipgroupfileset dir="${dist.dir}/lib" includes="*.jar"/> -->
+          <manifest>
+              <attribute name="Main-Class" value="${main.class}"/>
+          </manifest>
+        </jar>
+        <delete dir="${dist.dir}/lib"/>
+        <delete file="${dist.jar}"/>
+        
+        <!-- Export the web GUI -->
+        <property name="dist.webdir" value="${dist.dir}/llkptg"/>
+        <property name="resources.webdir" value="resources/org/fit/llkptg"/>
+        <mkdir dir="${dist.webdir}"/>
+        <mkdir dir="${dist.webdir}/css"/>
+        <mkdir dir="${dist.webdir}/js"/>
+        <mkdir dir="${dist.webdir}/js/libs"/>
+        <copy todir="${dist.webdir}" file="${resources.webdir}/index.html" />
+        <copy todir="${dist.webdir}/css"><fileset dir="${resources.webdir}/css"/></copy>
+        <copy todir="${dist.webdir}/js" file="${resources.webdir}/js/parser.js" />
+        <copy todir="${dist.webdir}/js" file="${resources.webdir}/js/generator-core.js" />
+        <copy todir="${dist.webdir}/js" file="${resources.webdir}/js/generator-gui.js" />
+        <copy todir="${dist.webdir}/js/libs"><fileset dir="${resources.webdir}/js/libs"/></copy>
+    </target>
+
+</project>
