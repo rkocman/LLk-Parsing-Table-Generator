@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  
+  <title>LL(k) Parsing Table Generator</title>
+  <meta name="description" content="LL(k) Parsing Table Generator for Automaton with One-Symbol Reading Head">
+  <meta name="author" content="Radim Kocman and Dušan Kolář, https://github.com/Gals42/LLk-Parsing-Table-Generator" />
+  
+  <script src="js/libs/lodash.min.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/generator-core.js"></script>
+  
+  <script src="js/libs/jquery-2.1.3.js"></script>
+  <script src="js/libs/excellentexport.js"></script>
+  <link rel="stylesheet" type="text/css" href="css/generator-gui.css" />
+  <script src="js/generator-gui.js"></script>
+</head>
+<body>
+  
+  <div id="ptg">
+    
+    <div id="head">
+      <h1>LL(k) Parsing Table Generator</h1>
+      <h2>for Automaton with One-Symbol Reading Head</h2>
+      <h3>Authors: Radim Kocman and Dušan Kolář, <a href="https://github.com/Gals42/LLk-Parsing-Table-Generator">GitHub</a></h3>
+      <p>
+        <strong>Based on:</strong><br>
+        Kolář, D.: Simulation of LLk Parsers with Wide Context by Automaton with One-Symbol Reading Head.<br>
+        Aho, A.V., Ullman, J.D.: The Theory of Parsing, Translation, and Compiling, Volume I: Parsing.
+      </p>
+    </div>
+    
+    <form id="input" action="#" method="get" onsubmit="PTG.run(); return false;">
+      <div class="left">
+        <h2>Input Grammar:</h2>
+        <textarea name="grammar" spellcheck="false"
+          placeholder="/* Insert your grammar */"></textarea>
+      </div>
+      <div class="right">
+        <div class="control">
+          <h2>Example Grammar:</h2>
+          <p class="code">
+            <span ondblclick="selectContent(this)"
+            >%token a b<br>
+            %% /* LL(2) */<br>
+            S : a A a a<br>
+            &nbsp; | b A b a ;<br>
+            A : /*eps*/<br>
+            &nbsp; | b ;</span>
+            <br><br>
+          </p>
+          <h2>Configuration:</h2>
+          <div class="config">
+            <strong>k</strong> (>= 1)<strong>:</strong>&nbsp; <input name="k" type="number" value="2"><br>
+            <strong>output:</strong>&nbsp;
+            <select name="result">
+              <option value="full">whole process</option>
+              <option value="compact">parsing table</option>
+              <option value="export">export only</option>
+            </select><br>
+            <input type="submit" value="Generate parsing table">
+          </div>
+        </div>
+        <div class="hints">
+          <h2>Hints:</h2>
+          <div class="content">
+            This tool uses simplified 
+            <a href="http://dinosaur.compilertools.net/yacc/">yacc-like syntax</a> 
+            for its input:
+            <ul>
+              <li>rules - can be defined as in yacc but without actions</li>
+              <li>nonterminals - defined in the form <span>[_a-Z][_a-Z0-9]*</span></li>
+              <li>abstract terminals - same as nonterminals but declared<br>
+                by <span>%token</span> at the beginning</li>
+              <li>literal terminals - anything inside quotes or apostrophes<br>
+                (escape sequences are not supported)</li>
+              <li>comments - C-like single-line <span>//</span> 
+                and multi-line <span>/**/</span></li>
+            </ul>
+
+            <strong>Export <em>(not supported for IE)</em>:</strong>
+            <ul>
+              <li>XLS - standard Excel file <em>(the best option)</em></li>
+              <li>CSV1 - CSV format comma-separated</li>
+              <li>CSV2 - CSV format semicolon-separated</li>
+            </ul>
+
+            <strong>Performance tips:</strong>
+            <ul>
+              <li>try a less verbose ouput for faster results</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </form>
+    
+    <div id="status">
+      <h2>Status:&nbsp; <span class="info">Insert your grammar</span></h2>
+    </div>
+    
+    <div id="output">
+    </div>
+    
+  </div>
+  
+</body>
+</html>
