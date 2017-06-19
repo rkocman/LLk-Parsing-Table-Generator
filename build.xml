@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 LL(k) Parsing Table Generator
-https://github.com/Gals42/LLk-Parsing-Table-Generator
+https://github.com/rkocman/LLk-Parsing-Table-Generator
 Authors: Radim Kocman and Dušan Kolář
 -->
 <project name="LL(k)_Parsing_Table_Generator" default="default" basedir=".">
