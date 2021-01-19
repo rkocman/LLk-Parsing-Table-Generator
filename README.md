@@ -9,7 +9,7 @@ LL(k) Parsing Table Generator for Automaton with One-Symbol Reading Head
 
 ## User Guide
 
-The are two distinct interfaces that can be used; both built around the same 
+There are two distinct interfaces that can be used; both built around the same 
 core algorithm which is written in JavaScript.   
 The graphical user interface is based on standard web technologies and can
 run in any modern web browser.  
